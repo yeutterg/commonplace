@@ -1,0 +1,166 @@
+@import "tailwindcss";
+
+/* Lunaris Design System Tokens — mapped from Pencil */
+:root {
+  --background: #F2F3F0;
+  --foreground: #111111;
+  --card: #FFFFFF;
+  --card-foreground: #111111;
+  --primary: #FF8400;
+  --primary-foreground: #111111;
+  --secondary: #E7E8E5;
+  --secondary-foreground: #111111;
+  --muted: #F2F3F0;
+  --muted-foreground: #666666;
+  --border: #CBCCC9;
+  --input: #CBCCC9;
+  --ring: #666666;
+  --destructive: #D93C15;
+  --accent: #F2F3F0;
+  --accent-foreground: #111111;
+  --popover: #FFFFFF;
+  --popover-foreground: #111111;
+  --sidebar-bg: #E7E8E5;
+  --sidebar-foreground: #666666;
+  --sidebar-border: #CBCCC9;
+  --sidebar-accent: #CBCCC9;
+  --sidebar-accent-foreground: #18181b;
+  --color-success: #DFE6E1;
+  --color-success-foreground: #004D1A;
+  --color-warning: #E9E3D8;
+  --color-warning-foreground: #804200;
+  --color-error: #E5DCDA;
+  --color-error-foreground: #8C1C00;
+  --color-info: #DFDFE6;
+  --color-info-foreground: #000066;
+  --radius: 16px;
+  --comment-highlight: #FF840033;
+  --comment-highlight-active: #FF840066;
+}
+
+.dark {
+  --background: #111111;
+  --foreground: #FFFFFF;
+  --card: #1A1A1A;
+  --card-foreground: #FFFFFF;
+  --primary: #FF8400;
+  --primary-foreground: #111111;
+  --secondary: #2E2E2E;
+  --secondary-foreground: #FFFFFF;
+  --muted: #2E2E2E;
+  --muted-foreground: #B8B9B6;
+  --border: #2E2E2E;
+  --input: #2E2E2E;
+  --ring: #666666;
+  --destructive: #FF5C33;
+  --accent: #111111;
+  --accent-foreground: #F2F3F0;
+  --popover: #1A1A1A;
+  --popover-foreground: #FFFFFF;
+  --sidebar-bg: #18181b;
+  --sidebar-foreground: #fafafa;
+  --sidebar-border: #ffffff1a;
+  --sidebar-accent: #2a2a30;
+  --sidebar-accent-foreground: #fafafa;
+  --color-success: #222924;
+  --color-success-foreground: #B6FFCE;
+  --color-warning: #291C0F;
+  --color-warning-foreground: #FF8400;
+  --color-error: #24100B;
+  --color-error-foreground: #FF5C33;
+  --color-info: #222229;
+  --color-info-foreground: #B2B2FF;
+  --comment-highlight: #FF840033;
+  --comment-highlight-active: #FF840066;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-sidebar: var(--sidebar-bg);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-fg: var(--sidebar-accent-foreground);
+  --color-success-bg: var(--color-success);
+  --color-success-fg: var(--color-success-foreground);
+  --color-warning-bg: var(--color-warning);
+  --color-warning-fg: var(--color-warning-foreground);
+  --color-error-bg: var(--color-error);
+  --color-error-fg: var(--color-error-foreground);
+  --color-highlight: var(--comment-highlight);
+  --color-highlight-active: var(--comment-highlight-active);
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+/* Markdown prose styling — Obsidian-like */
+.prose {
+  max-width: 48rem;
+  line-height: 1.75;
+  font-size: 1rem;
+}
+.prose h1 { font-size: 2rem; font-weight: 700; margin: 2rem 0 1rem; font-family: var(--font-mono); }
+.prose h2 { font-size: 1.5rem; font-weight: 600; margin: 1.75rem 0 0.75rem; font-family: var(--font-mono); }
+.prose h3 { font-size: 1.25rem; font-weight: 600; margin: 1.5rem 0 0.5rem; font-family: var(--font-mono); }
+.prose h4 { font-size: 1.1rem; font-weight: 600; margin: 1.25rem 0 0.5rem; }
+.prose p { margin: 0 0 1rem; }
+.prose ul, .prose ol { margin: 0 0 1rem; padding-left: 1.5rem; }
+.prose li { margin: 0.25rem 0; }
+.prose blockquote { border-left: 3px solid var(--primary); padding: 0.5rem 1rem; margin: 1rem 0; color: var(--muted-foreground); }
+.prose pre { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.875rem; }
+.prose code { font-family: var(--font-mono); font-size: 0.875em; background: var(--secondary); padding: 0.125rem 0.375rem; border-radius: 4px; }
+.prose pre code { background: none; padding: 0; border-radius: 0; }
+.prose a { color: var(--primary); text-decoration: underline; }
+.prose a:hover { opacity: 0.8; }
+.prose hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+.prose table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+.prose th, .prose td { border: 1px solid var(--border); padding: 0.5rem 0.75rem; text-align: left; }
+.prose th { background: var(--secondary); font-weight: 600; }
+.prose img { max-width: 100%; border-radius: 8px; margin: 1rem 0; }
+
+/* Comment highlight marks in the text */
+mark[data-comment-id] {
+  background: var(--comment-highlight);
+  cursor: pointer;
+  border-radius: 2px;
+  padding: 0 1px;
+  transition: background 0.15s;
+}
+mark[data-comment-id]:hover,
+mark[data-comment-id].active {
+  background: var(--comment-highlight-active);
+}
+
+/* Selection tooltip */
+.selection-tooltip {
+  position: absolute;
+  z-index: 50;
+  animation: fadeIn 0.15s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

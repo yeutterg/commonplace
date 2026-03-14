@@ -1,36 +1,123 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Obsidian Comments
 
-## Getting Started
+This repo is now structured as a hybrid system:
 
-First, run the development server:
+- `apps/web`: a Vercel-safe Next.js frontend
+- `apps/api`: a Docker-oriented backend that reads an Obsidian-compatible vault and persists comments/session state
+- `packages/shared`: shared TypeScript contracts between the web app and the API
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+The important architectural decision is that the web app no longer reads or writes the vault directly. The backend owns vault access, comments, auth cookies, and future sync/collaboration responsibilities.
+
+## Current shape
+
+- Notes are loaded from a filesystem vault adapter in `apps/api`
+- Notes are assigned stable app-level IDs through a small registry in SQLite
+- Comments are stored in SQLite under a durable state directory
+- Protected note access is handled by backend-issued cookies
+- The frontend renders notes and comments by calling the backend API
+- A websocket endpoint exists as a stub for future collaborative editing
+
+## Workspace layout
+
+```text
+apps/
+  api/        Express API, vault adapter, SQLite comment store
+  web/        Next.js UI for browsing and reviewing notes
+packages/
+  shared/     Shared API types
+infra/
+  docker/     Dockerfiles for the API and web app
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Local development
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Install dependencies:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install
+```
 
-## Learn More
+Run the API:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run dev:api
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Run the web app:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run dev:web
+```
 
-## Deploy on Vercel
+Run tests:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm test
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+By default:
+
+- web: `http://localhost:3000`
+- api: `http://localhost:4000`
+
+## Environment
+
+Frontend env:
+
+- `API_BASE_URL`: server-side URL used by Next.js when fetching the API
+- `NEXT_PUBLIC_API_BASE_URL`: browser-visible API base URL
+
+Backend env:
+
+- `PORT`: API port
+- `VAULT_DIR`: mounted Obsidian vault or published vault subset
+- `STATE_DIR`: persistent directory for SQLite and future sync state
+- `CORS_ORIGIN`: allowed frontend origin
+- `SESSION_SECRET`: cookie signing secret
+- `SESSION_MAX_AGE_DAYS`: session lifetime before re-authentication
+- `COOKIE_DOMAIN`: optional cookie domain for shared deployments
+- `COOKIE_SAME_SITE`: `lax`, `strict`, or `none`
+
+See:
+
+- [apps/web/.env.example](/Users/greg/WIP/obsidian-comments/app/apps/web/.env.example)
+- [apps/api/.env.example](/Users/greg/WIP/obsidian-comments/app/apps/api/.env.example)
+
+## Docker
+
+Run the full stack locally:
+
+```bash
+docker compose up --build
+```
+
+The compose file mounts `./apps/web/content` as the example vault. Replace that bind mount with a real Obsidian vault path when you are ready.
+
+## Deployment model
+
+Recommended split:
+
+- Deploy `apps/web` to Vercel
+- Deploy `apps/api` anywhere Docker is appropriate (VPS, Fly, Railway, Render, ECS, k8s)
+
+The web app only needs the API URL. The backend needs durable storage and vault access.
+
+## Long-term direction
+
+This layout is intended to grow into a collaborative markdown editor.
+
+The backend is the right place for:
+
+- document metadata
+- stable note identity
+- durable comment storage
+- future version history
+- vault sync/import/export
+- websocket collaboration
+
+The vault adapter boundary is already isolated so you can add:
+
+- mounted local vaults
+- Git-backed vault sync
+- remote storage adapters
+- Obsidian CLI wrappers if they turn out to be useful

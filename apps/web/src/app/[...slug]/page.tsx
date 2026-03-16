@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import NoteViewerWrapper from "./NoteViewerWrapper";
 import { fetchNoteDetail, fetchNotes } from "@/lib/api";
-import type { NoteDetailResponse } from "@obsidian-comments/shared";
+import type { NoteDetailResponse } from "@commonplace/shared";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +20,7 @@ export async function generateMetadata({
   try {
     const detail = await fetchNoteDetail(joinSlug(slug));
     return {
-      title: `${detail.note.title} - Obsidian Comments`,
+      title: detail.note.title,
     };
   } catch {
     return { title: "Not Found" };

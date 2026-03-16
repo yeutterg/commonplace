@@ -1,5 +1,5 @@
 {
-  "name": "@obsidian-comments/web",
+  "name": "@commonplace/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@obsidian-comments/shared": "*",
+    "@commonplace/shared": "*",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3"

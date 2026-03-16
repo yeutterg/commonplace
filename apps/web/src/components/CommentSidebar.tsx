@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { CommentRecord } from "@obsidian-comments/shared";
+import type { CommentRecord } from "@commonplace/shared";
 import { MailIcon, MessageSquareIcon, XIcon } from "./Icons";
 
 export type CommentData = CommentRecord;
@@ -26,8 +26,6 @@ interface Props {
   onReplySubmit: (commentId: string, payload: { authorEmail: string; body: string }) => Promise<{ pendingApproval: boolean }>;
   onApproveReply: (replyId: string) => void;
   onDeleteReply: (replyId: string) => void;
-  showResolved: boolean;
-  onToggleResolved: () => void;
   open: boolean;
   mobile: boolean;
   onClose?: () => void;
@@ -47,8 +45,6 @@ export default function CommentSidebar({
   onReplySubmit,
   onApproveReply,
   onDeleteReply,
-  showResolved,
-  onToggleResolved,
   open,
   mobile,
   onClose,
@@ -56,7 +52,6 @@ export default function CommentSidebar({
   replyTargetId,
   onReplyTargetChange,
 }: Props) {
-  const [sortMode, setSortMode] = useState<"document" | "time">("document");
   const [replyEmail, setReplyEmail] = useState("");
   const [replyBody, setReplyBody] = useState("");
   const [replyError, setReplyError] = useState("");
@@ -80,15 +75,10 @@ export default function CommentSidebar({
     return count + (comment.approved ? 0 : 1) + replyPending;
   }, 0);
 
-  const sorted = useMemo(() => {
-    const filtered = showResolved ? comments : comments.filter((comment) => comment.status === "open");
-    return [...filtered].sort((a, b) => {
-      if (sortMode === "document") {
-        return a.anchorStart - b.anchorStart;
-      }
-      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-    });
-  }, [comments, showResolved, sortMode]);
+  const sorted = useMemo(
+    () => [...comments.filter((comment) => comment.status === "open")].sort((a, b) => a.anchorStart - b.anchorStart),
+    [comments],
+  );
 
   const content = (
     <>
@@ -107,38 +97,34 @@ export default function CommentSidebar({
         ) : null}
       </div>
 
-      <div className="comments-controls">
-        <div className="segmented-tabs">
-          <button
-            type="button"
-            className={`segmented-tab ${sortMode === "document" ? "active" : ""}`}
-            onClick={() => setSortMode("document")}
-          >
-            Doc order
-          </button>
-          <button
-            type="button"
-            className={`segmented-tab ${sortMode === "time" ? "active" : ""}`}
-            onClick={() => setSortMode("time")}
-          >
-            Time
-          </button>
-        </div>
-        <button
-          type="button"
-          className={`filter-pill ${showResolved ? "active" : ""}`}
-          onClick={onToggleResolved}
-        >
-          Resolved
-        </button>
-      </div>
-
       <div className="comments-scroll">
         {sorted.length === 0 ? (
-          <div className="comments-empty">
-            <MessageSquareIcon width={18} height={18} />
-            <p>No comments yet. Select text to add one.</p>
-          </div>
+          comments.length === 0 ? (
+            <div className="comments-empty comments-empty-first">
+              <div className="comments-empty-icon" aria-hidden="true">
+                <MessageSquareIcon width={20} height={20} />
+              </div>
+              <p className="comments-empty-title">No comments yet</p>
+              <p className="comments-empty-body">
+                Start a discussion by selecting text in the note, then click <strong>+ Comment</strong>.
+              </p>
+              <div className="comments-empty-steps">
+                <p>1. Highlight a sentence or paragraph</p>
+                <p>2. Click <strong>+ Comment</strong></p>
+                <p>3. Submit your note</p>
+              </div>
+            </div>
+          ) : (
+            <div className="comments-empty comments-empty-resolved">
+              <div className="comments-empty-icon" aria-hidden="true">
+                <MessageSquareIcon width={20} height={20} />
+              </div>
+              <p className="comments-empty-title">No open comments</p>
+              <p className="comments-empty-body">
+                All comments in this note are resolved.
+              </p>
+            </div>
+          )
         ) : (
           sorted.map((comment) => (
             <article

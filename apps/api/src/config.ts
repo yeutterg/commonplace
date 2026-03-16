@@ -28,5 +28,5 @@ export const apiConfig = {
   sessionMaxAgeDays: env.SESSION_MAX_AGE_DAYS,
   cookieDomain: env.COOKIE_DOMAIN,
   cookieSameSite: env.COOKIE_SAME_SITE,
-  sqlitePath: path.join(env.STATE_DIR, "obsidian-comments.sqlite")
+  sqlitePath: path.join(env.STATE_DIR, "commonplace.sqlite")
 };

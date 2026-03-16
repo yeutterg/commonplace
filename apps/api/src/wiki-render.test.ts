@@ -45,7 +45,8 @@ publish: true
   assert.match(detail?.html ?? "", /href="\/admin\/section\/ledger"[^>]*>Ledger<\/a>/);
   assert.match(detail?.html ?? "", /href="\/admin\/section\/ledger"[^>]*>the ledger<\/a>/);
   assert.match(detail?.html ?? "", /class="obsidian-note-embed"/);
-  assert.match(detail?.html ?? "", /href="\/admin\/section\/ledger"[^>]*target="_blank"[^>]*rel="noopener noreferrer"[^>]*>Ledger<\/a>/);
+  assert.match(detail?.html ?? "", /href="\/admin\/section\/ledger"[^>]*>Ledger<\/a>/);
+  assert.doesNotMatch(detail?.html ?? "", /href="\/admin\/section\/ledger"[^>]*target="_blank"/);
   assert.match(detail?.html ?? "", /Embedded Ledger/);
   assert.match(detail?.html ?? "", /Row one/);
 });

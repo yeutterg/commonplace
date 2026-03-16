@@ -2,8 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import type { NoteSummary } from "@obsidian-comments/shared";
-import ThemeToggle from "@/components/ThemeToggle";
+import type { NoteSummary } from "@commonplace/shared";
 import {
   buildDirectoryTree,
   collectFolderIds,
@@ -13,8 +12,12 @@ import {
   type DirectoryNode,
 } from "@/lib/directory-tree";
 import { ArrowUpRightIcon, ChevronDownIcon, ChevronRightIcon, FolderIcon, ShareIcon } from "./Icons";
+import ThemeToggle from "@/components/ThemeToggle";
 
 function statusForNote(note: NoteSummary) {
+  if (note.visibility === "users") {
+    return { label: "Users", className: "status-pill status-pill-users" };
+  }
   if (note.visibility === "password") {
     return { label: "Private", className: "status-pill status-pill-private" };
   }
@@ -160,7 +163,7 @@ export default function DirectoryPageClient({
         <div className="vault-header-copy">
           <p className="vault-eyebrow">YOUR VAULT</p>
           <div className="vault-title-row">
-            <h1>obsidian-vault</h1>
+            <h1>Commonplace</h1>
             {admin ? <span className="vault-admin-label">Admin View</span> : null}
           </div>
           <p className="vault-subtitle">
@@ -172,8 +175,9 @@ export default function DirectoryPageClient({
             <button type="button" className="icon-button" onClick={() => void handleShare()} aria-label="Share vault">
               <ShareIcon width={16} height={16} />
             </button>
-          ) : null}
-          <ThemeToggle />
+          ) : (
+            <ThemeToggle />
+          )}
         </div>
       </header>
 

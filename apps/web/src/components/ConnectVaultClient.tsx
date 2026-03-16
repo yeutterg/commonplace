@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { VaultConnectionResponse } from "@obsidian-comments/shared";
+import type { VaultConnectionResponse } from "@commonplace/shared";
 import { getClientApiBaseUrl } from "@/lib/api-base";
 import { ArrowUpRightIcon, CheckIcon, FolderIcon, GlobeIcon } from "./Icons";
 
@@ -74,7 +74,7 @@ export default function ConnectVaultClient({ initial }: { initial: VaultConnecti
             type="button"
             className="primary-button connect-action"
             disabled={loading}
-            onClick={() => void save({ ...state, connected: true, vaultName: state.vaultName || "My Obsidian Vault" })}
+            onClick={() => void save({ ...state, connected: true, vaultName: state.vaultName || "My Markdown Vault" })}
           >
             <FolderIcon width={16} height={16} />
             Connect Local Folder
@@ -112,7 +112,7 @@ export default function ConnectVaultClient({ initial }: { initial: VaultConnecti
                 className="field-input"
                 value={state.vaultName}
                 onChange={(event) => setState((current) => ({ ...current, vaultName: event.target.value }))}
-                placeholder="My Obsidian Vault"
+                placeholder="My Markdown Vault"
                 disabled={loading}
               />
             </div>

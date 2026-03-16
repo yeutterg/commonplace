@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import Database from "better-sqlite3";
-import type { VaultConnectionResponse } from "@obsidian-comments/shared";
+import type { VaultConnectionResponse } from "@commonplace/shared";
 
 const DEFAULT_CONNECTION: VaultConnectionResponse = {
   connected: false,

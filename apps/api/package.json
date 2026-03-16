@@ -1,5 +1,5 @@
 {
-  "name": "@obsidian-comments/api",
+  "name": "@commonplace/api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
     "test": "tsx --test src/**/*.test.ts"
   },
   "dependencies": {
-    "@obsidian-comments/shared": "*",
+    "@commonplace/shared": "*",
     "better-sqlite3": "^12.4.1",
     "cookie": "^1.0.2",
     "cors": "^2.8.5",

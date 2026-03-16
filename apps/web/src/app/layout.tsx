@@ -22,8 +22,8 @@ const uiFont = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Obsidian Comments",
-  description: "Publish Obsidian notes with inline commenting",
+  title: "Commonplace",
+  description: "Web interface for Markdown vaults with collaborative comments and editing. Compatible with the core Obsidian Markdown format.",
 };
 
 export default function RootLayout({

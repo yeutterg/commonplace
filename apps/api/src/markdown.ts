@@ -5,7 +5,11 @@ import remarkRehype from "remark-rehype";
 import rehypeStringify from "rehype-stringify";
 import rehypeSanitize from "rehype-sanitize";
 
-function rehypeOpenLinksInNewTab() {
+function shouldOpenInNewTab(href: string) {
+  return /^(?:https?:)?\/\//i.test(href) || /^mailto:/i.test(href);
+}
+
+function rehypeNormalizeLinkTargets() {
   function visit(node: unknown) {
     if (!node || typeof node !== "object") {
       return;
@@ -19,11 +23,22 @@ function rehypeOpenLinksInNewTab() {
     };
 
     if (element.type === "element" && element.tagName === "a") {
-      element.properties = {
-        ...element.properties,
-        target: "_blank",
-        rel: "noopener noreferrer",
-      };
+      const href = typeof element.properties?.href === "string"
+        ? element.properties.href
+        : "";
+
+      if (shouldOpenInNewTab(href)) {
+        element.properties = {
+          ...element.properties,
+          target: "_blank",
+          rel: "noopener noreferrer",
+        };
+      } else if (element.properties) {
+        const nextProperties = { ...element.properties };
+        delete nextProperties.target;
+        delete nextProperties.rel;
+        element.properties = nextProperties;
+      }
     }
 
     for (const child of element.children ?? []) {
@@ -43,7 +58,7 @@ export async function renderMarkdown(source: string): Promise<string> {
     .use(remarkGfm)
     .use(remarkRehype)
     .use(rehypeSanitize)
-    .use(rehypeOpenLinksInNewTab)
+    .use(rehypeNormalizeLinkTargets)
     .use(rehypeStringify)
     .process(normalizedSource);
 

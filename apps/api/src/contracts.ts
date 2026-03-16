@@ -4,7 +4,7 @@ import type {
   NoteDetailResponse,
   NoteDisplayField,
   NoteSummary,
-} from "@obsidian-comments/shared";
+} from "@commonplace/shared";
 
 export interface PublishedNote extends NoteSummary {
   passwordHash?: string;
@@ -35,6 +35,10 @@ export interface NotesRepository {
     anchorStart: number;
     anchorEnd: number;
     replacementText: string;
+  }): Promise<PublishedNote | null>;
+  replaceNoteContent(input: {
+    slug: string;
+    markdown: string;
   }): Promise<PublishedNote | null>;
 }
 

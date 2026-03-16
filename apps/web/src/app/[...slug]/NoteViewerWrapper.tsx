@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import type { NoteDetailResponse } from "@obsidian-comments/shared";
+import type { NoteDetailResponse } from "@commonplace/shared";
 import NoteViewer from "@/components/NoteViewer";
 import LoginForm from "@/components/LoginForm";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -13,6 +13,7 @@ import {
   MessageSquareIcon,
   MinusIcon,
   MoreHorizontalIcon,
+  PencilIcon,
   PlusIcon,
   SettingsIcon,
   ShareIcon,
@@ -46,18 +47,19 @@ export default function NoteViewerWrapper({
   const [checking, setChecking] = useState(initialDetail.note.visibility === "password" && !initialDetail.authorized);
   const [commentCount, setCommentCount] = useState(initialDetail.note.commentCount);
   const [commentsOpen, setCommentsOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [adminPanelMode, setAdminPanelMode] = useState<"settings" | "sharing" | null>(null);
   const [statusNotice, setStatusNotice] = useState<string | null>(null);
   const [fontScale, setFontScale] = useState(1);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [directEditMode, setDirectEditMode] = useState(false);
   const initializedViewportRef = useRef(false);
   const actionMenuRef = useRef<HTMLDivElement | null>(null);
 
   const directoryHref = adminMode ? "/admin" : "/";
   const noteHref = adminMode ? `/admin${getNoteHref(detail.note.slug)}` : getNoteHref(detail.note.slug);
   const breadcrumbLinks = useMemo(() => {
-    const items = [{ label: "obsidian-vault", href: directoryHref, current: detail.breadcrumbs.length === 0 }];
+    const items = [{ label: "Commonplace", href: directoryHref, current: detail.breadcrumbs.length === 0 }];
     let cumulativePath = "";
 
     detail.breadcrumbs.forEach((part, index) => {
@@ -83,11 +85,32 @@ export default function NoteViewerWrapper({
 
   async function saveNoteSettings(input: {
     publish: boolean;
-    visibility: "public" | "password";
+    visibility: "public" | "password" | "users";
     comments: boolean;
     editing: boolean;
     password?: string;
+    internalUsers: string[];
+    externalEmails: string[];
   }) {
+    if (input.visibility === "users") {
+      setDetail((current) => ({
+        ...current,
+        note: {
+          ...current.note,
+          published: input.publish,
+          visibility: "users",
+          commentsEnabled: input.comments,
+          editingEnabled: input.editing,
+        },
+        accessControl: {
+          internalUsers: input.internalUsers,
+          externalEmails: input.externalEmails,
+        },
+      }));
+      setStatusNotice("Users visibility saved in the web UI mockup. Backend enforcement is not wired yet.");
+      return;
+    }
+
     const response = await fetch(`${getClientApiBaseUrl()}/api/admin/note/settings`, {
       method: "PATCH",
       credentials: "include",
@@ -102,6 +125,7 @@ export default function NoteViewerWrapper({
       throw new Error(data?.error || "Unable to update note settings");
     }
     setDetail(await response.json());
+    setStatusNotice("Note settings saved.");
   }
 
   async function shareNote() {
@@ -112,6 +136,12 @@ export default function NoteViewerWrapper({
     }
     await navigator.clipboard.writeText(publicUrl).catch(() => undefined);
     setStatusNotice(detail.note.published ? "Public link copied." : "Draft link copied. Publish the note to share it publicly.");
+  }
+
+  function toggleDirectEditMode() {
+    setAdminPanelMode(null);
+    setMobileMenuOpen(false);
+    setDirectEditMode((current) => !current);
   }
 
   useEffect(() => {
@@ -188,7 +218,7 @@ export default function NoteViewerWrapper({
         return nextIsMobile ? false : current;
       });
       if (nextIsMobile) {
-        setSettingsOpen(false);
+        setAdminPanelMode(null);
       }
       setMobileMenuOpen(false);
       initializedViewportRef.current = true;
@@ -232,6 +262,8 @@ export default function NoteViewerWrapper({
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [mobileMenuOpen]);
+
+  const settingsOpen = adminPanelMode !== null;
 
   if (checking || hydratingContent) {
     return (
@@ -310,6 +342,16 @@ export default function NoteViewerWrapper({
                   {adminMode ? (
                     <button
                       type="button"
+                      className={`mobile-action-menu-item ${directEditMode ? "active" : ""}`}
+                      onClick={toggleDirectEditMode}
+                    >
+                      <PencilIcon width={16} height={16} />
+                      <span>{directEditMode ? "Close editor" : "Edit note"}</span>
+                    </button>
+                  ) : null}
+                  {adminMode ? (
+                    <button
+                      type="button"
                       className="mobile-action-menu-item"
                       onClick={async () => {
                         setMobileMenuOpen(false);
@@ -326,7 +368,7 @@ export default function NoteViewerWrapper({
                       className="mobile-action-menu-item"
                       onClick={() => {
                         setMobileMenuOpen(false);
-                        setSettingsOpen(true);
+                        setAdminPanelMode("settings");
                       }}
                     >
                       <SettingsIcon width={16} height={16} />
@@ -367,23 +409,34 @@ export default function NoteViewerWrapper({
                 <>
                   <button
                     type="button"
-                    className="icon-button"
-                    onClick={shareNote}
+                    className={`icon-button ${directEditMode ? "active" : ""}`}
+                    onClick={toggleDirectEditMode}
+                    aria-label={directEditMode ? "Close note editor" : "Edit note text"}
+                    aria-pressed={directEditMode}
+                  >
+                    <PencilIcon width={16} height={16} />
+                  </button>
+                  <button
+                    type="button"
+                    className={`icon-button ${adminPanelMode === "sharing" ? "active" : ""}`}
+                    onClick={() => setAdminPanelMode((current) => current === "sharing" ? null : "sharing")}
                     aria-label="Share note"
+                    aria-pressed={adminPanelMode === "sharing"}
                   >
                     <ShareIcon width={16} height={16} />
                   </button>
                   <button
                     type="button"
-                    className={`icon-button ${settingsOpen ? "active" : ""}`}
-                    onClick={() => setSettingsOpen((open) => !open)}
+                    className={`icon-button ${adminPanelMode === "settings" ? "active" : ""}`}
+                    onClick={() => setAdminPanelMode((current) => current === "settings" ? null : "settings")}
                     aria-label="Open note settings"
+                    aria-pressed={adminPanelMode === "settings"}
                   >
                     <SettingsIcon width={16} height={16} />
                   </button>
                 </>
               ) : null}
-              <ThemeToggle />
+              {!adminMode ? <ThemeToggle /> : null}
             </>
           )}
         </div>
@@ -397,8 +450,28 @@ export default function NoteViewerWrapper({
           adminMode={adminMode}
           commentsOpen={commentsOpen}
           fontScale={fontScale}
+          directEditMode={directEditMode}
+          onDirectEditModeChange={setDirectEditMode}
           onCommentsOpenChange={setCommentsOpen}
           onCommentCountChange={setCommentCount}
+          onSaveMarkdown={adminMode ? async (markdown) => {
+            const response = await fetch(`${getClientApiBaseUrl()}/api/admin/note/content`, {
+              method: "PATCH",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                slug: detail.note.slug,
+                markdown,
+              }),
+            });
+            if (!response.ok) {
+              const data = await response.json().catch(() => null);
+              throw new Error(data?.error || "Unable to update note");
+            }
+            const nextDetail = await response.json();
+            setDetail(nextDetail);
+            setCommentCount(nextDetail.note.commentCount);
+          } : undefined}
           onEditSelection={adminMode ? async (input) => {
             const response = await fetch(`${getClientApiBaseUrl()}/api/admin/note/content`, {
               method: "PATCH",
@@ -421,7 +494,8 @@ export default function NoteViewerWrapper({
           <AdminSettingsPanel
             detail={detail}
             open={settingsOpen}
-            onClose={() => setSettingsOpen(false)}
+            mode={adminPanelMode ?? "settings"}
+            onClose={() => setAdminPanelMode(null)}
             onSave={saveNoteSettings}
           />
         ) : null}

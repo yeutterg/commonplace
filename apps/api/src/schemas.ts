@@ -15,13 +15,23 @@ export const adminNoteSettingsSchema = z.object({
   password: z.string().optional(),
 });
 
-export const adminNoteContentSchema = z.object({
+const adminNoteSelectionContentSchema = z.object({
   slug: z.string().min(1),
   anchorText: z.string().min(1),
   anchorStart: z.coerce.number().int().min(0),
   anchorEnd: z.coerce.number().int().min(0),
   replacementText: z.string(),
 });
+
+const adminNoteMarkdownContentSchema = z.object({
+  slug: z.string().min(1),
+  markdown: z.string(),
+});
+
+export const adminNoteContentSchema = z.union([
+  adminNoteSelectionContentSchema,
+  adminNoteMarkdownContentSchema,
+]);
 
 export const vaultConnectionSchema = z.object({
   connected: z.boolean().default(true),

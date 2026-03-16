@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import Database from "better-sqlite3";
-import type { CommentRecord, CommentReplyRecord } from "@obsidian-comments/shared";
+import type { CommentRecord, CommentReplyRecord } from "@commonplace/shared";
 
 interface CommentRow {
   id: string;

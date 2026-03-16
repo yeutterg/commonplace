@@ -12,8 +12,8 @@ RUN npm install
 COPY apps/api apps/api
 COPY packages/shared packages/shared
 
-RUN npm run build -w @obsidian-comments/shared && npm run build -w @obsidian-comments/api
+RUN npm run build -w @commonplace/shared && npm run build -w @commonplace/api
 
 EXPOSE 4000
 
-CMD ["npm", "run", "start", "-w", "@obsidian-comments/api"]
+CMD ["npm", "run", "start", "-w", "@commonplace/api"]

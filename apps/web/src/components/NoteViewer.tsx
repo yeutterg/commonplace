@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import type { CommentRecord, NoteDetailResponse, NoteDisplayField } from "@obsidian-comments/shared";
+import type { CommentRecord, NoteDetailResponse, NoteDisplayField } from "@commonplace/shared";
 import CommentSidebar, { CommentData } from "./CommentSidebar";
 import CommentForm from "./CommentForm";
 import { getClientApiBaseUrl } from "@/lib/api-base";
@@ -14,8 +14,11 @@ interface Props {
   adminMode: boolean;
   commentsOpen: boolean;
   fontScale: number;
+  directEditMode?: boolean;
+  onDirectEditModeChange?: (open: boolean) => void;
   onCommentsOpenChange: (open: boolean) => void;
   onCommentCountChange: (count: number) => void;
+  onSaveMarkdown?: (markdown: string) => Promise<void>;
   onEditSelection?: (input: {
     anchorText: string;
     anchorStart: number;
@@ -47,6 +50,10 @@ function formatFieldValue(field: NoteDisplayField) {
       : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(date);
   }
   return field.value;
+}
+
+function shouldOpenInNewTab(href: string) {
+  return /^(?:https?:)?\/\//i.test(href) || /^mailto:/i.test(href);
 }
 
 function flattenCommentCount(comments: CommentRecord[]) {
@@ -204,14 +211,16 @@ export default function NoteViewer({
   adminMode,
   commentsOpen,
   fontScale,
+  directEditMode = false,
+  onDirectEditModeChange,
   onCommentsOpenChange,
   onCommentCountChange,
+  onSaveMarkdown,
   onEditSelection,
 }: Props) {
   const [comments, setComments] = useState<CommentData[]>([]);
   const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
   const [replyTargetId, setReplyTargetId] = useState<string | null>(null);
-  const [showResolved, setShowResolved] = useState(false);
   const [selection, setSelection] = useState<HighlightSelection | null>(null);
   const [hoveredHighlight, setHoveredHighlight] = useState<HoverHighlight | null>(null);
   const [showCommentForm, setShowCommentForm] = useState(false);
@@ -220,10 +229,14 @@ export default function NoteViewer({
   const [editError, setEditError] = useState("");
   const [submissionNotice, setSubmissionNotice] = useState("");
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [markdownDraft, setMarkdownDraft] = useState(detail.markdown ?? "");
+  const [markdownError, setMarkdownError] = useState("");
+  const [isSavingMarkdown, setIsSavingMarkdown] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<HTMLDivElement>(null);
   const hoverLeaveTimeoutRef = useRef<number | null>(null);
+  const markdownTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 960);
@@ -239,6 +252,24 @@ export default function NoteViewer({
     const timeout = window.setTimeout(() => setSubmissionNotice(""), 3200);
     return () => window.clearTimeout(timeout);
   }, [submissionNotice]);
+
+  useEffect(() => {
+    if (!directEditMode) {
+      setMarkdownDraft(detail.markdown ?? "");
+      setMarkdownError("");
+      return;
+    }
+
+    setShowCommentForm(false);
+    setShowEditForm(false);
+    setEditError("");
+    setSelection(null);
+    setHoveredHighlight(null);
+    window.getSelection()?.removeAllRanges();
+
+    const timeout = window.setTimeout(() => markdownTextareaRef.current?.focus(), 0);
+    return () => window.clearTimeout(timeout);
+  }, [detail.markdown, directEditMode]);
 
   const reloadComments = useCallback(async () => {
     if (!detail.note.commentsEnabled && !adminMode) {
@@ -282,7 +313,7 @@ export default function NoteViewer({
   }
 
   useEffect(() => {
-    const canSelect = detail.note.commentsEnabled || (adminMode && detail.note.editingEnabled && onEditSelection);
+    const canSelect = !directEditMode && (detail.note.commentsEnabled || (adminMode && onEditSelection));
     if (!canSelect) {
       return;
     }
@@ -330,7 +361,7 @@ export default function NoteViewer({
 
     document.addEventListener("mouseup", handleMouseUp);
     return () => document.removeEventListener("mouseup", handleMouseUp);
-  }, [adminMode, detail.note.commentsEnabled, detail.note.editingEnabled, onEditSelection]);
+  }, [adminMode, detail.note.commentsEnabled, directEditMode, onEditSelection]);
 
   useEffect(() => {
     if (!selection) {
@@ -365,6 +396,10 @@ export default function NoteViewer({
   }, [selection]);
 
   useEffect(() => {
+    if (directEditMode) {
+      return;
+    }
+
     const container = contentRef.current;
     if (!container) {
       return;
@@ -420,11 +455,11 @@ export default function NoteViewer({
       container.removeEventListener("mouseover", handleMouseOver);
       container.removeEventListener("mouseout", handleMouseOut);
     };
-  }, [adminMode, comments, isMobile, onCommentsOpenChange, selection]);
+  }, [adminMode, comments, directEditMode, isMobile, onCommentsOpenChange, selection]);
 
   const highlightedHtml = useMemo(
-    () => applyCommentHighlights(detail.html ?? "", comments, showResolved, activeCommentId, selection),
-    [activeCommentId, comments, detail.html, selection, showResolved],
+    () => applyCommentHighlights(detail.html ?? "", comments, false, activeCommentId, selection),
+    [activeCommentId, comments, detail.html, selection],
   );
 
   async function updateComment(id: string, status: "open" | "resolved") {
@@ -518,6 +553,48 @@ export default function NoteViewer({
     }
   }
 
+  const handleSaveMarkdown = useCallback(async () => {
+    if (!onSaveMarkdown) {
+      return;
+    }
+
+    setIsSavingMarkdown(true);
+    setMarkdownError("");
+    try {
+      await onSaveMarkdown(markdownDraft);
+      setSubmissionNotice("Note updated.");
+      onDirectEditModeChange?.(false);
+    } catch (error) {
+      setMarkdownError(error instanceof Error ? error.message : "Unable to update note");
+    } finally {
+      setIsSavingMarkdown(false);
+    }
+  }, [markdownDraft, onDirectEditModeChange, onSaveMarkdown]);
+
+  useEffect(() => {
+    if (!directEditMode) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        void handleSaveMarkdown();
+        return;
+      }
+
+      if (event.key === "Escape" && !isSavingMarkdown) {
+        event.preventDefault();
+        setMarkdownDraft(detail.markdown ?? "");
+        setMarkdownError("");
+        onDirectEditModeChange?.(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [detail.markdown, directEditMode, handleSaveMarkdown, isSavingMarkdown, onDirectEditModeChange]);
+
   return (
     <div ref={viewerRef} className="note-viewer-shell">
       <div className="note-reader">
@@ -538,8 +615,8 @@ export default function NoteViewer({
                         <a
                           className="frontmatter-value frontmatter-link"
                           href={field.href}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          target={shouldOpenInNewTab(field.href) ? "_blank" : undefined}
+                          rel={shouldOpenInNewTab(field.href) ? "noopener noreferrer" : undefined}
                         >
                           {formatFieldValue(field)}
                         </a>
@@ -556,13 +633,57 @@ export default function NoteViewer({
 
             {submissionNotice ? <div className="inline-notice">{submissionNotice}</div> : null}
 
-            <div
-              ref={contentRef}
-              className="note-prose"
-              dangerouslySetInnerHTML={{ __html: highlightedHtml }}
-            />
+            {directEditMode ? (
+              <section className="note-editor-card">
+                <div className="note-editor-header">
+                  <div className="note-editor-copy">
+                    <p className="note-editor-eyebrow">Admin Editor</p>
+                    <p className="note-editor-description">Editing the markdown body directly. Frontmatter stays under note settings.</p>
+                  </div>
+                  <div className="note-editor-actions">
+                    <button
+                      type="button"
+                      className="ghost-button"
+                      onClick={() => {
+                        setMarkdownDraft(detail.markdown ?? "");
+                        setMarkdownError("");
+                        onDirectEditModeChange?.(false);
+                      }}
+                      disabled={isSavingMarkdown}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="primary-button"
+                      onClick={() => void handleSaveMarkdown()}
+                      disabled={isSavingMarkdown}
+                    >
+                      {isSavingMarkdown ? "Saving..." : "Save note"}
+                    </button>
+                  </div>
+                </div>
+                <label className="note-editor-field">
+                  <span className="note-editor-label">Markdown</span>
+                  <textarea
+                    ref={markdownTextareaRef}
+                    className="note-editor-textarea"
+                    value={markdownDraft}
+                    onChange={(event) => setMarkdownDraft(event.target.value)}
+                    spellCheck={false}
+                  />
+                </label>
+                {markdownError ? <p className="comment-form-error">{markdownError}</p> : null}
+              </section>
+            ) : (
+              <div
+                ref={contentRef}
+                className="note-prose"
+                dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+              />
+            )}
 
-            {detail.backlinks.length > 0 ? (
+            {!directEditMode && detail.backlinks.length > 0 ? (
               <section className="backlinks-section">
                 <div className="note-divider" />
                 <p className="backlinks-label">Backlinks</p>
@@ -583,10 +704,10 @@ export default function NoteViewer({
             className="selection-toolbar"
             style={{
               top: selection.rect.bottom + 10,
-              left: selection.rect.left + Math.max(selection.rect.width / 2 - (adminMode && detail.note.editingEnabled ? 86 : 48), 0),
+              left: selection.rect.left + Math.max(selection.rect.width / 2 - (adminMode && onEditSelection ? 86 : 48), 0),
             }}
           >
-            {adminMode && detail.note.editingEnabled && onEditSelection ? (
+            {adminMode && onEditSelection ? (
               <button
                 type="button"
                 className="selection-action ghost-button"
@@ -626,7 +747,7 @@ export default function NoteViewer({
             onMouseEnter={cancelHoveredClear}
             onMouseLeave={clearHoveredHighlightSoon}
           >
-            {detail.note.editingEnabled && onEditSelection ? (
+            {onEditSelection ? (
               <button
                 type="button"
                 className="selection-action ghost-button"
@@ -730,7 +851,7 @@ export default function NoteViewer({
         ) : null}
       </div>
 
-      {(detail.note.commentsEnabled || (adminMode && comments.length > 0)) ? (
+      {(detail.note.commentsEnabled || adminMode) ? (
         <CommentSidebar
           comments={comments}
           activeCommentId={activeCommentId}
@@ -745,8 +866,6 @@ export default function NoteViewer({
           onReplySubmit={handleReplySubmit}
           onApproveReply={(id) => void handleApproveReply(id)}
           onDeleteReply={(id) => void handleDeleteReply(id)}
-          showResolved={showResolved}
-          onToggleResolved={() => setShowResolved((current) => !current)}
           open={commentsOpen}
           mobile={isMobile}
           onClose={() => onCommentsOpenChange(false)}

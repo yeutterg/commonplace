@@ -5,9 +5,9 @@ comments: true
 editing: false
 ---
 
-# Welcome to Obsidian Comments
+# Welcome to Commonplace
 
-This is an example note published from your Obsidian vault. You can select any text on this page to leave an anchored comment.
+This is an example note published from your Markdown vault. You can select any text on this page to leave an anchored comment, or open the admin view to edit the note body directly.
 
 ## How It Works
 
@@ -19,10 +19,11 @@ This is an example note published from your Obsidian vault. You can select any t
 ## Features
 
 - Inline anchored comments tied to specific text
-- Comments stored as adjacent markdown files
+- Admin editing from the browser
+- Obsidian-compatible wiki links, embeds, and backlinks
 - Light and dark theme support
 - Password protection for private notes
-- No database required — Git-first storage
+- Plain Markdown source with collaborative state stored separately
 
 ## Example Content
 
@@ -52,4 +53,4 @@ function publishNote(note) {
 
 ---
 
-*This note was published using Obsidian Comments.*
+*This note was published using Commonplace.*

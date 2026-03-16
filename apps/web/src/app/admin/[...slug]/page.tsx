@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import type { NoteDetailResponse } from "@obsidian-comments/shared";
+import type { NoteDetailResponse } from "@commonplace/shared";
 import { fetchAdminNoteDetail, fetchAdminNotes } from "@/lib/api";
 import NoteViewerWrapper from "../../[...slug]/NoteViewerWrapper";
 
@@ -8,6 +8,23 @@ export const dynamic = "force-dynamic";
 
 function joinSlug(parts: string[]) {
   return parts.map((part) => decodeURIComponent(part)).join("/");
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string[] }>;
+}) {
+  const { slug } = await params;
+
+  try {
+    const detail = await fetchAdminNoteDetail(joinSlug(slug));
+    return {
+      title: detail.note.title,
+    };
+  } catch {
+    return { title: "Not Found" };
+  }
 }
 
 export default async function AdminNotePage({

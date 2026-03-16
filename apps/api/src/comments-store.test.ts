@@ -6,7 +6,7 @@ import path from "node:path";
 import { CommentsStore } from "./comments-store.js";
 
 test("CommentsStore persists and mutates comments by note id", () => {
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "obsidian-comments-store-"));
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "commonplace-comments-store-"));
   const sqlitePath = path.join(tempDir, "comments.sqlite");
   const store = new CommentsStore(sqlitePath);
 

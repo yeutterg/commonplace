@@ -118,3 +118,42 @@ test("FilesystemNotesIndex reports a missing vault without throwing", async () =
   assert.deepEqual(notes, []);
   assert.match(index.getStatus().lastError ?? "", /Vault directory does not exist/);
 });
+
+test("FilesystemNotesIndex can replace full markdown content while preserving frontmatter", async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "obsidian-notes-index-content-"));
+  const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), "obsidian-notes-state-"));
+  const sqlitePath = path.join(stateDir, "registry.sqlite");
+  const notePath = path.join(tempDir, "editable.md");
+
+  fs.writeFileSync(
+    notePath,
+    `---
+publish: true
+comments: false
+editing: true
+---
+
+Original paragraph.
+`
+  );
+
+  const registry = new NoteRegistry(sqlitePath);
+  const index = new FilesystemNotesIndex(tempDir, registry);
+
+  const updated = await index.replaceNoteContent({
+    slug: "editable",
+    markdown: "# Updated heading\n\nReplaced body.\n",
+  });
+
+  assert.ok(updated);
+
+  const nextRaw = fs.readFileSync(notePath, "utf8");
+  assert.match(nextRaw, /publish: true/);
+  assert.match(nextRaw, /comments: false/);
+  assert.match(nextRaw, /editing: true/);
+  assert.match(nextRaw, /# Updated heading/);
+  assert.doesNotMatch(nextRaw, /Original paragraph/);
+
+  const detail = await index.getNoteDetail("editable", true, true);
+  assert.equal(detail?.markdown, "# Updated heading\n\nReplaced body.\n");
+});

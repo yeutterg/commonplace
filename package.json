@@ -1,16 +1,22 @@
 {
-  "name": "obsidian-comments",
+  "name": "commonplace",
   "private": true,
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "dev:web": "npm run dev -w @obsidian-comments/web",
-    "dev:api": "npm run dev -w @obsidian-comments/api",
+    "dev:web": "npm run dev -w @commonplace/web",
+    "dev:api": "npm run dev -w @commonplace/api",
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present"
+    "test": "npm run test --workspaces --if-present",
+    "e2e:shots": "playwright test --config=playwright.config.ts --project=chromium",
+    "e2e:shots:update": "playwright test --config=playwright.config.ts --project=chromium --update-snapshots"
+  }
+  ,
+  "devDependencies": {
+    "@playwright/test": "^1.56.1"
   }
 }

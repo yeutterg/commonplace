@@ -3,7 +3,7 @@ import { parse as parseCookie, serialize as serializeCookie } from "cookie";
 import type { Request, Response } from "express";
 import { apiConfig } from "./config.js";
 
-const COOKIE_NAME = "obsidian-comments-session";
+const COOKIE_NAME = "commonplace-session";
 
 interface SessionPayload {
   email: string | null;

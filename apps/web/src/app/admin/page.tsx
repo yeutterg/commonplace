@@ -1,8 +1,27 @@
 import DirectoryPageClient from "@/components/DirectoryPageClient";
 import { fetchAdminNotes } from "@/lib/api";
-import type { NoteSummary } from "@obsidian-comments/shared";
+import type { NoteSummary } from "@commonplace/shared";
 
 export const dynamic = "force-dynamic";
+
+function getFolderTitle(query: string | undefined) {
+  if (!query) {
+    return "Commonplace";
+  }
+  const parts = query.split("/").map((part) => part.trim()).filter(Boolean);
+  return parts.at(-1) ?? "Commonplace";
+}
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
+  return {
+    title: getFolderTitle(typeof q === "string" ? q : undefined),
+  };
+}
 
 export default async function AdminHome({
   searchParams,

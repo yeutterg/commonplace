@@ -3,13 +3,14 @@ import { headers } from "next/headers";
 import type {
   BacklinkSummary,
   CommentRecord,
+  NoteAccessControl,
   NoteDetailResponse,
   NoteDisplayField,
   NotesListResponse,
   NoteSummary,
   SessionResponse,
   VaultConnectionResponse,
-} from "@obsidian-comments/shared";
+} from "@commonplace/shared";
 import { getServerApiBaseUrl } from "./api-base";
 
 const FETCH_TIMEOUT_MS = 8_000;
@@ -36,7 +37,11 @@ function normalizeNoteSummary(input: unknown, index: number): NoteSummary | null
   const id = typeof row.id === "string" ? row.id : `fallback-${index}`;
   const title = typeof row.title === "string" && row.title.length > 0 ? row.title : slug || "Untitled";
   const path = typeof row.path === "string" && row.path.length > 0 ? row.path : slug || title;
-  const visibility = row.visibility === "password" ? "password" : "public";
+  const visibility = row.visibility === "password"
+    ? "password"
+    : row.visibility === "users"
+      ? "users"
+      : "public";
   const commentsEnabled = typeof row.commentsEnabled === "boolean" ? row.commentsEnabled : true;
   const editingEnabled = typeof row.editingEnabled === "boolean" ? row.editingEnabled : false;
   const published = typeof row.published === "boolean" ? row.published : true;
@@ -134,6 +139,19 @@ function normalizeNoteDetail(input: unknown): NoteDetailResponse {
     backlinks: normalizeBacklinks(row.backlinks),
     breadcrumbs: Array.isArray(row.breadcrumbs)
       ? row.breadcrumbs.filter((part): part is string => typeof part === "string" && part.length > 0)
+      : [],
+    accessControl: normalizeAccessControl(row.accessControl),
+  };
+}
+
+function normalizeAccessControl(input: unknown): NoteAccessControl {
+  const row = input && typeof input === "object" ? input as Record<string, unknown> : {};
+  return {
+    internalUsers: Array.isArray(row.internalUsers)
+      ? row.internalUsers.filter((item): item is string => typeof item === "string" && item.length > 0)
+      : [],
+    externalEmails: Array.isArray(row.externalEmails)
+      ? row.externalEmails.filter((item): item is string => typeof item === "string" && item.length > 0)
       : [],
   };
 }

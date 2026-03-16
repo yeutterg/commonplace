@@ -12,8 +12,8 @@ RUN npm install
 COPY apps/web apps/web
 COPY packages/shared packages/shared
 
-RUN npm run build -w @obsidian-comments/shared && npm run build -w @obsidian-comments/web
+RUN npm run build -w @commonplace/shared && npm run build -w @commonplace/web
 
 EXPOSE 3000
 
-CMD ["npm", "run", "start", "-w", "@obsidian-comments/web"]
+CMD ["npm", "run", "start", "-w", "@commonplace/web"]

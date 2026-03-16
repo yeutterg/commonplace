@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  transpilePackages: ["@obsidian-comments/shared"],
+  transpilePackages: ["@commonplace/shared"],
 };
 
 export default nextConfig;

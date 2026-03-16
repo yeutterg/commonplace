@@ -1,4 +1,4 @@
-import type { NoteSummary } from "@obsidian-comments/shared";
+import type { NoteSummary } from "@commonplace/shared";
 
 export interface DirectoryFolderNode {
   id: string;

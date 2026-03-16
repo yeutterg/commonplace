@@ -17,8 +17,15 @@ test("renderMarkdown preserves CommonMark-style paragraph and hard-break behavio
   assert.match(html, /<p>new paragraph<br>\nhard break line<\/p>/);
 });
 
-test("renderMarkdown opens links in a new tab safely", async () => {
+test("renderMarkdown opens external links in a new tab safely", async () => {
   const html = await renderMarkdown("[OpenAI](https://openai.com)");
 
   assert.match(html, /<a[^>]*href="https:\/\/openai\.com\/?"[^>]*target="_blank"[^>]*rel="noopener noreferrer"[^>]*>OpenAI<\/a>/);
+});
+
+test("renderMarkdown keeps internal note links in the same tab", async () => {
+  const html = await renderMarkdown("[Ledger](/admin/section/ledger)");
+
+  assert.match(html, /<a[^>]*href="\/admin\/section\/ledger"[^>]*>Ledger<\/a>/);
+  assert.doesNotMatch(html, /target="_blank"/);
 });

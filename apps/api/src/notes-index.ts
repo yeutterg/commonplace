@@ -8,7 +8,7 @@ import type {
   NoteDisplayField,
   NoteFrontmatter,
   NoteSummary,
-} from "@obsidian-comments/shared";
+} from "@commonplace/shared";
 import type { NotesIndexStatus, NotesRepository, PublishedNote } from "./contracts.js";
 import { renderMarkdown } from "./markdown.js";
 import { NoteRegistry } from "./note-registry.js";
@@ -307,6 +307,17 @@ function escapeHtml(value: string) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function shouldOpenInNewTab(href: string) {
+  return /^(?:https?:)?\/\//i.test(href) || /^mailto:/i.test(href);
+}
+
+function buildAnchorAttributes(href: string) {
+  const escapedHref = escapeHtml(href);
+  return shouldOpenInNewTab(href)
+    ? `href="${escapedHref}" target="_blank" rel="noopener noreferrer"`
+    : `href="${escapedHref}"`;
 }
 
 function toPosixRelativePath(filePath: string) {
@@ -1041,6 +1052,25 @@ export class FilesystemNotesIndex implements NotesRepository {
     return this.cache.get(input.slug) ?? null;
   }
 
+  async replaceNoteContent(input: {
+    slug: string;
+    markdown: string;
+  }) {
+    this.refreshIfStale();
+    const note = this.cache.get(input.slug);
+    if (!note) {
+      return null;
+    }
+
+    const raw = fs.readFileSync(note.absolutePath, "utf8");
+    const parsed = matter(raw);
+
+    fs.writeFileSync(note.absolutePath, matter.stringify(input.markdown, parsed.data), "utf8");
+    this.indexSignature = "";
+    this.refreshIfStale();
+    return this.cache.get(input.slug) ?? null;
+  }
+
   getStatus(): NotesIndexStatus {
     return {
       vaultDir: this.vaultDir,
@@ -1389,7 +1419,7 @@ export class FilesystemNotesIndex implements NotesRepository {
 
     if (isQueryLink(value)) {
       const href = buildNoteHref(value.slug, adminMode);
-      return `<a href="${href}" target="_blank" rel="noopener noreferrer">${escapeHtml(value.label)}</a>`;
+      return `<a ${buildAnchorAttributes(href)}>${escapeHtml(value.label)}</a>`;
     }
 
     if (value instanceof Date) {
@@ -1399,7 +1429,7 @@ export class FilesystemNotesIndex implements NotesRepository {
     if (typeof value === "string") {
       const trimmed = value.trim();
       if (/^https?:\/\//i.test(trimmed) || /^mailto:/i.test(trimmed)) {
-        return `<a href="${escapeHtml(trimmed)}" target="_blank" rel="noopener noreferrer">${escapeHtml(trimmed)}</a>`;
+        return `<a ${buildAnchorAttributes(trimmed)}>${escapeHtml(trimmed)}</a>`;
       }
       return escapeHtml(trimmed);
     }
@@ -1538,7 +1568,7 @@ export class FilesystemNotesIndex implements NotesRepository {
             `<input type="checkbox" disabled ${task.completed ? "checked" : ""}>`,
             `<span>${escapeHtml(task.text)}</span>`,
             `</label>`,
-            `<a class="obsidian-task-query-source" href="${noteHref}" target="_blank" rel="noopener noreferrer">${escapeHtml(note.title)}</a>`,
+            `<a class="obsidian-task-query-source" ${buildAnchorAttributes(noteHref)}>${escapeHtml(note.title)}</a>`,
             `</li>`,
           ].join("");
         })
@@ -1678,7 +1708,7 @@ export class FilesystemNotesIndex implements NotesRepository {
             `<input type="checkbox" disabled ${task.completed ? "checked" : ""}>`,
             `<span>${escapeHtml(task.text)}</span>`,
             `</label>`,
-            `<a class="obsidian-task-query-source" href="${noteHref}" target="_blank" rel="noopener noreferrer">${escapeHtml(note.title)}</a>`,
+            `<a class="obsidian-task-query-source" ${buildAnchorAttributes(noteHref)}>${escapeHtml(note.title)}</a>`,
             `</li>`,
           ].join("");
         })
@@ -1718,7 +1748,7 @@ export class FilesystemNotesIndex implements NotesRepository {
 
         return [
           `<section class="obsidian-task-query-group">`,
-          `<div class="obsidian-task-query-group-title"><a href="${noteHref}" target="_blank" rel="noopener noreferrer">${escapeHtml(note.path.replace(/\.md$/i, ""))}</a></div>`,
+          `<div class="obsidian-task-query-group-title"><a ${buildAnchorAttributes(noteHref)}>${escapeHtml(note.path.replace(/\.md$/i, ""))}</a></div>`,
           `<ul class="obsidian-task-query-list">${items}</ul>`,
           `</section>`,
         ].join("");
@@ -1956,7 +1986,7 @@ export class FilesystemNotesIndex implements NotesRepository {
   ) {
     const href = buildAssetHref(this.publicApiBaseUrl, sourceNote.slug, parsed.targetPath, adminMode);
     const label = parsed.alias || path.posix.basename(parsed.targetPath);
-    return `<a href="${href}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`;
+    return `<a ${buildAnchorAttributes(href)}>${escapeHtml(label)}</a>`;
   }
 
   private async renderAssetEmbedHtml(
@@ -1998,7 +2028,7 @@ export class FilesystemNotesIndex implements NotesRepository {
       const src = `${href}${parsed.fragment ? `#${encodeURIComponent(parsed.fragment)}` : ""}`;
       return [
         `<section class="obsidian-asset-embed obsidian-pdf-embed" data-obsidian-generated="true">`,
-        `<div class="obsidian-asset-embed-header"><a href="${href}" target="_blank" rel="noopener noreferrer">${escapeHtml(parsed.displayText)}</a></div>`,
+        `<div class="obsidian-asset-embed-header"><a ${buildAnchorAttributes(href)}>${escapeHtml(parsed.displayText)}</a></div>`,
         `<iframe src="${src}" title="${escapeHtml(parsed.displayText)}"></iframe>`,
         `</section>`,
       ].join("");
@@ -2292,7 +2322,7 @@ export class FilesystemNotesIndex implements NotesRepository {
     if (input.depth >= 4 || input.visited.has(note.slug)) {
       return [
         `<section class="obsidian-note-embed" data-obsidian-embed="note" data-embed-source-slug="${escapedSlug}" data-obsidian-generated="true">`,
-        `<div class="obsidian-note-embed-header"><a href="${href}" target="_blank" rel="noopener noreferrer">${escapedTitle}</a></div>`,
+        `<div class="obsidian-note-embed-header"><a ${buildAnchorAttributes(href)}>${escapedTitle}</a></div>`,
         `<div class="obsidian-note-embed-content"><p>Embedded note preview unavailable.</p></div>`,
         `</section>`,
       ].join("");
@@ -2307,7 +2337,7 @@ export class FilesystemNotesIndex implements NotesRepository {
 
     return [
       `<section class="obsidian-note-embed" data-obsidian-embed="note" data-embed-source-slug="${escapedSlug}" data-obsidian-generated="true">`,
-      `<div class="obsidian-note-embed-header"><a href="${href}" target="_blank" rel="noopener noreferrer">${escapedTitle}</a></div>`,
+      `<div class="obsidian-note-embed-header"><a ${buildAnchorAttributes(href)}>${escapedTitle}</a></div>`,
       `<div class="obsidian-note-embed-content">${embeddedHtml}</div>`,
       `</section>`,
     ].join("");

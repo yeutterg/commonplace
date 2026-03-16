@@ -1,83 +1,158 @@
-# Obsidian Comments
+# Commonplace
 
-Obsidian Comments publishes Markdown notes from an Obsidian-compatible vault and adds a lightweight web comment layer on top.
+Commonplace is a web interface for Markdown vaults with collaborative comments and editing. Compatible with the core Obsidian Markdown format.
 
-The current system is intentionally simple:
+It reads a local Markdown vault from disk, renders notes on the web, stores collaborative state in SQLite, and leaves the source of truth in plain files.
 
-- note content lives in your vault as normal Markdown files
-- published notes are selected with frontmatter
-- comments live in SQLite, not in the vault
-- the frontend is a Next.js app
-- the backend is an Express API that reads the vault from disk
+## Current Functionality
 
-This repo is designed for a split deployment:
+- Public directory for published notes
+- Admin directory for all notes, including drafts
+- Direct admin editing of note Markdown in the browser
+- Selection-based editing and anchored comments on note content
+- Threaded replies and moderation flows
+- Password-protected notes with cookie-backed access
+- Obsidian-style `[[wiki links]]`, `![[embeds]]`, and backlinks
+- Local asset serving for images, PDFs, audio, video, and file links
+- Dataview `TABLE`, `LIST`, and `TASK` query rendering
+- Obsidian Bases YAML table rendering
+- Tasks plugin fenced-block rendering
+- Frontmatter metadata display with clickable URLs and wiki-link references
+- Stable internal note IDs even when files move or rename
 
-- `apps/web`: frontend, suitable for Vercel
-- `apps/api`: backend, suitable for Docker on a VPS, homelab, or any machine that can access the vault
+## Current Limitations
 
-## What It Does
+- No realtime collaborative editing
+- No full-text search
+- No direct integration with the Obsidian desktop app process
+- `/admin` is currently a trusted-operator interface, not a separately authenticated admin surface
+- Public comments and replies require approval; admin submissions are auto-approved
+- `users` visibility exists in the admin UI as a mock state, but backend persistence and enforcement currently support only `public` and `password`
+- The connect-folder screen stores deployment metadata in SQLite, but it does not hot-swap `VAULT_DIR` at runtime
 
-- lists published notes from a vault directory
-- renders note content in the browser
-- supports password-protected notes
-- lets readers create anchored comments on note content
-- lets authorized viewers resolve, reopen, and delete comments
-- keeps stable internal note IDs even if note paths change
+## Frontmatter Contract
 
-## What It Does Not Do
+Only a small set of frontmatter keys changes application behavior.
 
-- realtime collaborative editing
-- full-text search
-- direct Obsidian CLI integration
-- direct integration with the Obsidian app process
+### Control Fields
 
-This app works with an Obsidian vault because it reads the vault format from disk. Obsidian itself is just one editor for that vault.
+- `publish`
+  Default: `false`
+  Behavior: only literal `true` puts the note in the public directory. Notes without `publish: true` still appear in `/admin`.
 
-## How Notes Are Selected
+- `visibility`
+  Default: `public`
+  Supported runtime values: `public`, `password`
+  UI-only state: `users`
+  Behavior: `password` requires authentication before the note body and comments are available. Any other value currently behaves as `public` in the backend indexer. The admin UI can show `users`, but that state is not yet persisted or enforced by the backend.
 
-Any Markdown file in the configured vault directory can be published by adding frontmatter like this:
+- `comments`
+  Default: `true`
+  Behavior: only literal `false` disables comments and comment API access for that note.
+
+- `password`
+  Default: unset
+  Behavior: used only when `visibility: password`. If you set it in frontmatter manually, it should be a SHA-256 hash string. The admin settings UI hashes plaintext before saving.
+
+- `editing`
+  Default: `false`
+  Behavior: stored as note metadata and exposed in the admin settings UI. Today it is not a hard enforcement gate, because admin-mode editing is available regardless of this flag.
+
+### Presentation Fields
+
+- `subtitle`
+  Special-cased and shown under the note title when present.
+
+- Any other scalar or array frontmatter key
+  Rendered in the note metadata block.
+
+Rendering rules for presentation fields:
+
+- strings render as text unless they match a URL or wiki-link form
+- numbers and booleans render as text
+- arrays render as tag pills
+- `Date` objects and the `date` key render with date formatting
+- string values that are `http(s)` or `mailto:` links render as clickable external links
+- string values written as `[[Wiki Links]]` render as internal note links when the target resolves
+- empty values and `null` are omitted
+
+### Derived, Not Configurable
+
+These are derived from the filesystem and not supported as frontmatter overrides:
+
+- `title`: filename without `.md`
+- `slug`: relative vault path without `.md`, lowercased, with spaces converted to `-`
+- stable note ID: managed internally through the note registry
+
+Frontmatter keys like `title`, `slug`, and `noteId` are not honored as control overrides.
+
+### Example
 
 ```md
 ---
 publish: true
 visibility: public
 comments: true
+editing: false
+subtitle: Quarterly review
+owner: "[[People/Alice]]"
+website: https://example.com
+tags:
+  - ops
+  - q1
+date: 2026-03-15
 ---
 ```
 
-Supported frontmatter fields:
+## Obsidian Compatibility
 
-- `publish`: if `true`, include the note in the published list
-- `visibility`: `public` or `password`
-- `comments`: if `false`, disables comments for that note
-- `password`: SHA-256 hash used for protected notes
-- `editing`: if `true`, marks the note as editable; defaults to `false`
+Commonplace works with an Obsidian-compatible vault because it reads Markdown files and related assets directly from disk.
 
-Derived automatically from the file system:
+Supported today:
 
-- `title`: the filename without `.md`
-- `slug`: the relative vault path without `.md`, lowercased, with spaces converted to `-`
+- wiki links
+- note embeds
+- local attachment embeds
+- backlinks
+- frontmatter metadata rendering
+- Dataview `TABLE`, `LIST`, and `TASK`
+- Obsidian Bases YAML table views
+- Tasks plugin fenced blocks
+
+Notes with invalid YAML frontmatter are skipped and surfaced as warnings in the API/directory UI.
 
 ## Storage Model
 
-Vault filesystem:
+Filesystem vault:
 
-- note content
+- Markdown note bodies
 - frontmatter
 - folder structure
+- local attachments and embed targets
 
 SQLite:
 
-- comment records
-- internal note ID registry
+- stable note ID registry
+- comments
+- replies
+- approval status
+- session state
+- vault connection metadata
 
-This is deliberate. It keeps note content transparent and editable in Obsidian while putting comment state in a store that handles updates more safely.
+## Security Model
+
+- Public note access is controlled per note with `publish` and `visibility`
+- Password-protected notes use a signed cookie session after successful password auth
+- Public comments and replies are created as unapproved and require admin approval
+- Admin endpoints are not currently protected by a separate login system
+
+If you expose Commonplace beyond a trusted environment, protect `/admin` at the network or reverse-proxy layer.
 
 ## Repo Layout
 
 ```text
 apps/
-  api/        Express API, vault indexing, auth, SQLite comments
+  api/        Express API, vault indexing, auth, SQLite state
   web/        Next.js frontend
 packages/
   shared/     Shared TypeScript contracts
@@ -85,7 +160,7 @@ infra/
   docker/     Dockerfiles
 ```
 
-## Running Locally Without Docker
+## Running Locally
 
 Install dependencies:
 
@@ -114,23 +189,26 @@ npm run lint
 npm run build
 ```
 
-Default URLs:
+Default local URLs:
 
 - web: `http://localhost:3000`
 - api: `http://localhost:4000`
+
+If `VAULT_DIR` is not set, the API defaults to the demo content in `apps/web/content`.
 
 ## Environment Variables
 
 Frontend:
 
-- `API_BASE_URL`: server-side API URL used by Next.js
-- `NEXT_PUBLIC_API_BASE_URL`: browser-visible API URL
+- `API_BASE_URL`: server-side API base URL used by Next.js
+- `NEXT_PUBLIC_API_BASE_URL`: browser-visible API base URL
 
 Backend:
 
 - `PORT`: API port
-- `VAULT_DIR`: path to the vault or published-notes directory
-- `STATE_DIR`: persistent directory for SQLite and app state
+- `VAULT_DIR`: local vault path to index
+- `STATE_DIR`: persistent directory for SQLite and runtime state
+- `PUBLIC_API_BASE_URL`: optional absolute API URL used when rendering asset links
 - `CORS_ORIGIN`: allowed frontend origin
 - `SESSION_SECRET`: cookie signing secret
 - `SESSION_MAX_AGE_DAYS`: session lifetime
@@ -142,214 +220,44 @@ Example files:
 - `apps/api/.env.example`
 - `apps/web/.env.example`
 
-## Docker Setup
+## Deployment Notes
 
-The recommended production path is to run `apps/api` in Docker on a machine that has access to the vault directory.
+The current architecture is a split app:
 
-### Quick Start With Compose
+- `apps/web` can run on Vercel or any Next.js host
+- `apps/api` must run somewhere with filesystem access to the vault and persistent `STATE_DIR`
 
-From the repo root:
+For Docker-style deployment, the important rule is simple:
 
-```bash
-docker compose up --build
-```
+- mount the real vault into the API runtime
+- persist the SQLite/data directory
 
-This starts:
-
-- API on port `4000`
-- web app on port `3000`
-
-The current compose file mounts the example content folder:
-
-```yaml
-- ./apps/web/content:/vault
-```
-
-That is only for local demo use.
-
-### Point Docker At A Real Vault
-
-Replace the example bind mount in `docker-compose.yml` with a real path on the host machine:
-
-```yaml
-services:
-  api:
-    volumes:
-      - /absolute/path/to/your/ObsidianVault:/vault
-      - api-data:/data
-```
-
-The important rule is:
-
-- the vault must exist on the Docker host
-- the API container must be able to read it
-- if you want comments/auth state to persist, `/data` must also be persistent
-
-### Recommended Docker Host Layout
-
-Example:
+Example host layout:
 
 ```text
-/srv/obsidian-comments/
+/srv/commonplace/
   docker-compose.yml
   .env
 
-/srv/obsidian-vault/
+/srv/markdown-vault/
   Notes/
   Projects/
   ...
 ```
 
-Then mount:
+Typical mounts:
 
-- `/srv/obsidian-vault:/vault`
+- `/srv/markdown-vault:/vault`
 - Docker volume or host path for `/data`
 
-## Using This With Obsidian Sync
+If you use Obsidian Sync, Syncthing, Dropbox, Git, or another file-sync tool, Commonplace does not talk to that sync layer directly. It only reads the files that exist locally on the machine running the API.
 
-Obsidian Sync is not something this app talks to directly. The correct mental model is:
+## Connect Folder Screen
 
-1. Obsidian Sync keeps a vault directory in sync across your devices.
-2. This app reads that same vault directory from disk.
+The `/connect` flow stores:
 
-That means the clean setup is:
+- vault name
+- local folder path
+- site URL prefix
 
-- pick one machine to run the API
-- make sure that machine has a local copy of the vault
-- let Obsidian Sync keep that local vault updated
-- mount that local vault into the API container
-
-### First-Time Setup If You Are Starting From Docker
-
-If you are setting this up from scratch, you may need to create the local synced vault on the machine before Docker can mount it.
-
-Typical first-time flow:
-
-1. Install Obsidian on the machine that will run the API.
-2. Sign in to your Obsidian account in the Obsidian app.
-3. Create or open the vault you want to use.
-4. Enable Obsidian Sync for that vault.
-5. Wait for the vault contents to finish downloading to the local filesystem.
-6. Identify the actual local path of that vault on disk.
-7. Use that local path as the bind mount source in `docker-compose.yml`.
-
-Until that vault exists locally on disk, Docker has nothing real to mount into the API container.
-
-### Practical Obsidian Sync Setup
-
-If you already use Obsidian Sync:
-
-1. Install Obsidian on the machine that will host the API.
-2. Open the synced vault in Obsidian on that machine.
-3. Wait until the vault is fully synced locally.
-4. Mount that local vault path into the API container as `/vault`.
-
-In other words, Obsidian Sync runs outside the app. The app just reads the synced files that now exist on disk.
-
-### Important Operational Note
-
-Do not assume the API can access a vault that only exists on your laptop if the API is running somewhere else.
-
-If the backend is on a VPS, then one of these must be true:
-
-- the vault is also present on that VPS
-- the vault is mirrored to that VPS
-- you mount network storage there
-
-The API always needs filesystem access to the vault it is reading.
-
-## Vercel Setup
-
-The frontend is suitable for Vercel. The backend is not, because it needs:
-
-- filesystem access to the vault
-- persistent SQLite state
-- a stable runtime for cookies and stateful app behavior
-
-### Recommended Deployment Split
-
-- deploy `apps/web` to Vercel
-- deploy `apps/api` to Docker on a VPS, homelab server, or similar
-
-### Vercel Project Setup
-
-In Vercel:
-
-1. Create a new project from this repo.
-2. Set the root directory to `apps/web`.
-3. Leave the framework as Next.js.
-4. Set these environment variables:
-
-```bash
-API_BASE_URL=https://your-api-domain.example.com
-NEXT_PUBLIC_API_BASE_URL=https://your-api-domain.example.com
-```
-
-`API_BASE_URL` is used by server-side Next.js fetches.
-
-`NEXT_PUBLIC_API_BASE_URL` is used by browser-side requests from the UI.
-
-### Backend Requirements For Vercel Frontend
-
-Your API deployment must:
-
-- be reachable over HTTPS
-- allow the Vercel frontend origin in `CORS_ORIGIN`
-- use a strong `SESSION_SECRET`
-- have persistent `/data`
-- have access to the vault directory
-
-### Cookie / Domain Notes
-
-If the frontend and backend are on different domains, default cookie behavior may be good enough for development but needs care in production.
-
-Typical options:
-
-- frontend: `https://notes.example.com`
-- backend: `https://api.example.com`
-
-Then consider:
-
-- `CORS_ORIGIN=https://notes.example.com`
-- `COOKIE_DOMAIN=.example.com` if you want broader cookie sharing
-- `COOKIE_SAME_SITE=none` if your browser/cookie setup requires cross-site cookies
-
-Be aware that `SameSite=None` also requires secure cookies over HTTPS.
-
-If you keep frontend and backend under the same parent domain, auth tends to be simpler.
-
-## Production Advice
-
-If you want the simplest dependable setup:
-
-- run the API in Docker on a machine that also has the vault on disk
-- use Obsidian Sync or another mechanism to keep that vault current on that machine
-- put the frontend on Vercel
-
-That gives you:
-
-- a fast stateless frontend
-- a stateful backend with vault access
-- a clean separation between note content and comment state
-
-## Current Capabilities
-
-- published note listing
-- note rendering from Markdown
-- password-protected notes
-- anchored comments
-- comment resolve / reopen / delete
-- stable note IDs across path changes
-
-## Future Extensions
-
-The current code leaves room for future additions such as:
-
-- richer auth and permissions
-- activity feeds and moderation
-- background vault sync/indexing
-- export/import helpers
-- search
-- collaborative editing
-
-But today the repo is specifically a vault-backed note publishing and commenting system, not a full remote editor.
+That data is useful for the UI and deployment metadata, but it does not currently reconfigure the live backend indexer. The actual indexed vault still comes from `VAULT_DIR`.

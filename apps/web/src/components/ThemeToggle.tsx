@@ -7,7 +7,7 @@ type Theme = "system" | "light" | "dark";
 type ThemeToggleVariant = "icon" | "menu";
 
 const ORDER: Theme[] = ["system", "light", "dark"];
-const THEME_EVENT = "obsidian-comments-theme-change";
+const THEME_EVENT = "commonplace-theme-change";
 
 function applyTheme(theme: Theme) {
   const root = document.documentElement;

@@ -8,7 +8,7 @@ import { CommentsStore } from "./comments-store.js";
 import { NoteRegistry } from "./note-registry.js";
 import { FilesystemNotesIndex } from "./notes-index.js";
 import { readSession, writeSession } from "./session.js";
-import type { NoteDetailResponse, NotesListResponse, NoteSummary, SystemCapabilities } from "@obsidian-comments/shared";
+import type { NoteDetailResponse, NotesListResponse, NoteSummary, SystemCapabilities } from "@commonplace/shared";
 import {
   adminNoteContentSchema,
   adminNoteSettingsSchema,
@@ -259,7 +259,9 @@ app.patch("/api/admin/note/content", async (req, res) => {
   }
 
   try {
-    const updated = await notesRepository.replaceNoteSelection(parsed.data);
+    const updated = "markdown" in parsed.data
+      ? await notesRepository.replaceNoteContent(parsed.data)
+      : await notesRepository.replaceNoteSelection(parsed.data);
     if (!updated) {
       res.status(404).json({ error: "Note not found" });
       return;

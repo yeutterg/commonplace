@@ -36,7 +36,11 @@ export function ArrowUpRightIcon(props: IconProps) {
 }
 
 export function MessageSquareIcon(props: IconProps) {
-  return <BaseIcon {...props}><path d="M6 19h9a4 4 0 0 0 4-4V7a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v11l3-3Z" /></BaseIcon>;
+  return (
+    <BaseIcon {...props}>
+      <path d="M12 4.25c4.56 0 8.25 2.93 8.25 6.54 0 3.62-3.69 6.55-8.25 6.55-.84 0-1.66-.1-2.43-.3L5.5 19l1.35-3.13c-1.92-1.2-3.1-3.08-3.1-5.08 0-3.61 3.69-6.54 8.25-6.54Z" />
+    </BaseIcon>
+  );
 }
 
 export function ShareIcon(props: IconProps) {

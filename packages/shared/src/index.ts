@@ -1,4 +1,9 @@
-export type NoteVisibility = "public" | "password";
+export type NoteVisibility = "public" | "password" | "users";
+
+export interface NoteAccessControl {
+  internalUsers: string[];
+  externalEmails: string[];
+}
 
 export interface NoteFrontmatter {
   [key: string]: unknown;
@@ -51,6 +56,7 @@ export interface NoteDetailResponse {
   frontmatterFields: NoteDisplayField[];
   backlinks: BacklinkSummary[];
   breadcrumbs: string[];
+  accessControl?: NoteAccessControl;
 }
 
 export interface CommentRecord {

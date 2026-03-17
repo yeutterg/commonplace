@@ -242,6 +242,30 @@ export async function fetchSession(): Promise<SessionResponse> {
   return response.json() as Promise<SessionResponse>;
 }
 
+export interface VaultInfo {
+  id: string;
+  name: string;
+}
+
+export async function fetchVaults(): Promise<VaultInfo[]> {
+  const timeout = withTimeoutSignal();
+  try {
+    const response = await fetch(`${getServerApiBaseUrl()}/api/vaults`, {
+      cache: "no-store",
+      signal: timeout.signal,
+    });
+    if (!response.ok) {
+      return [];
+    }
+    const data = await response.json() as { vaults: VaultInfo[] };
+    return Array.isArray(data.vaults) ? data.vaults : [];
+  } catch {
+    return [];
+  } finally {
+    timeout.clear();
+  }
+}
+
 export async function fetchVaultConnection(): Promise<VaultConnectionResponse> {
   const response = await fetch(`${getServerApiBaseUrl()}/api/vault/connection`, {
     cache: "no-store",

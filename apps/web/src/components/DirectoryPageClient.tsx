@@ -109,12 +109,18 @@ export default function DirectoryPageClient({
   warnings,
   admin = false,
   initialQuery = "",
+  vaultName = "Commonplace",
+  vaultId,
+  multiVault = false,
 }: {
   notes: NoteSummary[];
   error: string | null;
   warnings: string[];
   admin?: boolean;
   initialQuery?: string;
+  vaultName?: string;
+  vaultId?: string;
+  multiVault?: boolean;
 }) {
   const tree = useMemo(() => buildDirectoryTree(notes), [notes]);
   const allFolderIds = useMemo(() => collectFolderIds(tree), [tree]);
@@ -159,82 +165,90 @@ export default function DirectoryPageClient({
     }
 
     if (navigator.share) {
-      await navigator.share({ url, title: admin ? "Vault Admin" : "Vault Directory" }).catch(() => undefined);
+      await navigator.share({ url, title: vaultName }).catch(() => undefined);
       return;
     }
 
     await navigator.clipboard.writeText(url).catch(() => undefined);
   };
 
+  const vaultsHref = admin ? "/admin" : "/";
+
   return (
-    <div className={`vault-page ${admin ? "vault-page-admin" : ""}`}>
-      <header className="vault-header">
-        <div className="vault-header-copy">
-          <p className="vault-eyebrow">YOUR VAULT</p>
-          <div className="vault-title-row">
-            <h1>Commonplace</h1>
-            {admin ? <span className="vault-admin-label">Admin View</span> : null}
-          </div>
-          <p className="vault-subtitle">
-            {folderCount} folders · {totalNotes} notes
-          </p>
+    <div className="vault-page">
+      <div className="note-topbar">
+        <div className="note-topbar-left">
+          {multiVault ? (
+            <div className="note-breadcrumbs">
+              <Link href={vaultsHref} className="note-breadcrumb-link">vaults</Link>
+              <span className="note-breadcrumb-sep">/</span>
+              <span className="note-breadcrumb-current">{vaultName}</span>
+            </div>
+          ) : (
+            <span className="vault-topbar-label">{vaultName}</span>
+          )}
+          {admin ? <span className="vault-admin-label">Admin</span> : null}
         </div>
-        <div className="vault-header-actions">
+        <div className="note-topbar-actions">
           {admin ? (
             <button type="button" className="icon-button" onClick={() => void handleShare()} aria-label="Share vault">
               <ShareIcon width={16} height={16} />
             </button>
-          ) : (
-            <ThemeToggle />
-          )}
+          ) : null}
+          <ThemeToggle variant="icon" />
         </div>
-      </header>
+      </div>
 
-      <div className="vault-toolbar">
+      <div className="vault-directory-content">
+        <div className="vault-directory-header">
+          <h1 className="vault-directory-title">{vaultName}</h1>
+          <p className="vault-subtitle">
+            {totalNotes} notes across {folderCount} folders
+          </p>
+        </div>
+
         <label className="vault-search">
           <span>⌕</span>
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder={admin ? "Filter files..." : "Search folders and notes..."}
+            placeholder="Search notes..."
             aria-label="Search directory"
           />
         </label>
+
+        <main className="vault-tree-shell">
+          {error ? (
+            <div className="vault-alert vault-alert-error">
+              <strong>Vault unavailable.</strong> {error}
+            </div>
+          ) : null}
+
+          {!error && warnings.length > 0 ? (
+            <div className="vault-alert">
+              <strong>Partial vault load.</strong> {warnings[0]}
+              {warnings.length > 1 ? ` (+${warnings.length - 1} more)` : ""}
+            </div>
+          ) : null}
+
+          {filteredTree.length === 0 ? (
+            <div className="vault-empty">
+              {error ? "The vault could not be read." : "No matching notes."}
+            </div>
+          ) : (
+            filteredTree.map((node) => (
+              <TreeRow
+                key={node.id}
+                node={node}
+                depth={0}
+                expanded={effectiveExpanded}
+                onToggle={handleToggle}
+                admin={admin}
+              />
+            ))
+          )}
+        </main>
       </div>
-
-      <main className="vault-tree-shell">
-        <p className="vault-section-label">{admin ? "ALL FILES" : "FOLDERS"}</p>
-
-        {error ? (
-          <div className="vault-alert vault-alert-error">
-            <strong>Vault unavailable.</strong> {error}
-          </div>
-        ) : null}
-
-        {!error && warnings.length > 0 ? (
-          <div className="vault-alert">
-            <strong>Partial vault load.</strong> {warnings[0]}
-            {warnings.length > 1 ? ` (+${warnings.length - 1} more)` : ""}
-          </div>
-        ) : null}
-
-        {filteredTree.length === 0 ? (
-          <div className="vault-empty">
-            {error ? "The vault could not be read." : "No matching notes."}
-          </div>
-        ) : (
-          filteredTree.map((node) => (
-            <TreeRow
-              key={node.id}
-              node={node}
-              depth={0}
-              expanded={effectiveExpanded}
-              onToggle={handleToggle}
-              admin={admin}
-            />
-          ))
-        )}
-      </main>
     </div>
   );
 }

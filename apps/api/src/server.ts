@@ -104,6 +104,15 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
 
+app.get("/api/vaults", (_req, res) => {
+  res.json({
+    vaults: apiConfig.vaults.map((vault) => ({
+      id: vault.id,
+      name: vault.name,
+    })),
+  });
+});
+
 app.get("/api/system/capabilities", (_req, res) => {
   const capabilities: SystemCapabilities = {
     mode: "filesystem-vault",

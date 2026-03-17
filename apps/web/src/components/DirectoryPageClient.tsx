@@ -11,7 +11,7 @@ import {
   getNoteHref,
   type DirectoryNode,
 } from "@/lib/directory-tree";
-import { ArrowUpRightIcon, ChevronDownIcon, ChevronRightIcon, FolderIcon, ShareIcon } from "./Icons";
+import { ChevronDownIcon, ChevronRightIcon, FileIcon, FolderIcon, SearchIcon, ShareIcon } from "./Icons";
 import ThemeToggle from "@/components/ThemeToggle";
 
 function statusForNote(note: NoteSummary) {
@@ -47,7 +47,7 @@ function TreeRow({
     return (
       <Link href={href} className="vault-row vault-row-note" style={{ paddingLeft: 20 + depth * 18 }}>
         <span className="vault-row-main">
-          <span className="vault-row-icon"><ArrowUpRightIcon width={14} height={14} /></span>
+          <span className="vault-row-icon"><FileIcon width={15} height={15} /></span>
           <span className="vault-row-label">{node.name.replace(/\.md$/i, "")}</span>
         </span>
         {admin ? (
@@ -208,7 +208,7 @@ export default function DirectoryPageClient({
         </div>
 
         <label className="vault-search">
-          <span>⌕</span>
+          <SearchIcon width={16} height={16} />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}

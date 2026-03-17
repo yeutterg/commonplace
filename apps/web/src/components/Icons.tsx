@@ -111,6 +111,14 @@ export function CheckIcon(props: IconProps) {
   return <BaseIcon {...props}><path d="m5 12 4 4L19 6" /></BaseIcon>;
 }
 
+export function FileIcon(props: IconProps) {
+  return <BaseIcon {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /></BaseIcon>;
+}
+
+export function SearchIcon(props: IconProps) {
+  return <BaseIcon {...props}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></BaseIcon>;
+}
+
 export function SortIcon(props: IconProps) {
   return <BaseIcon {...props}><path d="M3 6h18" /><path d="M7 12h10" /><path d="M10 18h4" /></BaseIcon>;
 }

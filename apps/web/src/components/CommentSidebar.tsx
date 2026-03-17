@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { CommentRecord } from "@commonplace/shared";
-import { MailIcon, MessageSquareIcon, XIcon } from "./Icons";
+import { MailIcon, MessageSquareIcon, SortIcon, XIcon } from "./Icons";
 
 export type CommentData = CommentRecord;
 
@@ -96,47 +96,39 @@ export default function CommentSidebar({
   const content = (
     <>
       <div className="comments-panel-header">
-        <div>
+        <div className="comments-header-left">
           <p className="comments-title">Comments</p>
           <p className="comments-meta">
-            {openCount} open · {resolvedCount} resolved
+            {openCount} open
             {adminMode && pendingCount > 0 ? ` · ${pendingCount} pending` : ""}
           </p>
         </div>
-        {mobile ? (
-          <button type="button" className="icon-button" onClick={onClose} aria-label="Close comments">
-            <XIcon width={16} height={16} />
-          </button>
-        ) : null}
-      </div>
-
-      <div className="comments-toolbar">
-        <div className="segmented-tabs comments-sort-tabs" role="tablist" aria-label="Comment sort">
+        <div className="comments-header-right">
           <button
             type="button"
-            className={`segmented-tab ${sortMode === "doc" ? "active" : ""}`}
-            onClick={() => setSortMode("doc")}
-            aria-pressed={sortMode === "doc"}
+            className={`icon-button comments-filter-toggle ${showResolved ? "active" : ""}`}
+            onClick={() => setShowResolved((value) => !value)}
+            aria-pressed={showResolved}
+            aria-label={showResolved ? "Hide resolved" : "Show resolved"}
+            title={showResolved ? "Hide resolved" : "Show resolved"}
           >
-            Doc order
+            <span className="comments-filter-count">{resolvedCount}</span>
           </button>
           <button
             type="button"
-            className={`segmented-tab ${sortMode === "time" ? "active" : ""}`}
-            onClick={() => setSortMode("time")}
-            aria-pressed={sortMode === "time"}
+            className="icon-button"
+            onClick={() => setSortMode(sortMode === "doc" ? "time" : "doc")}
+            aria-label={sortMode === "doc" ? "Sort by time" : "Sort by document order"}
+            title={sortMode === "doc" ? "Sort by time" : "Sort by doc order"}
           >
-            Time
+            <SortIcon width={15} height={15} />
           </button>
+          {mobile ? (
+            <button type="button" className="icon-button" onClick={onClose} aria-label="Close comments">
+              <XIcon width={16} height={16} />
+            </button>
+          ) : null}
         </div>
-        <button
-          type="button"
-          className={`mini-action comments-filter-toggle ${showResolved ? "active" : ""}`}
-          onClick={() => setShowResolved((value) => !value)}
-          aria-pressed={showResolved}
-        >
-          Resolved
-        </button>
       </div>
 
       <div className="comments-scroll">

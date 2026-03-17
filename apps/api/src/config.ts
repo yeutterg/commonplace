@@ -25,7 +25,7 @@ function slugifyVaultName(value: string) {
 
 function parseVaults(input: { vaultDir: string; vaultDirs?: string | undefined }) {
   const rawEntries = (input.vaultDirs ?? "")
-    .split(";")
+    .split(/[;,]/)
     .map((entry) => entry.trim())
     .filter(Boolean);
   const paths = rawEntries.length > 0 ? rawEntries : [input.vaultDir];

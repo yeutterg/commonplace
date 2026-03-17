@@ -67,7 +67,7 @@ export default async function NotePage({
   if (!detail) {
     return (
       <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: 24 }}>
-        <div style={{ maxWidth: 560, width: "100%", border: "1px solid var(--border)", background: "var(--card)", padding: 20 }}>
+        <div style={{ maxWidth: 560, width: "100%", border: "1px solid var(--border)", background: "var(--card)", padding: 24, borderRadius: 12 }}>
           <h1 style={{ margin: "0 0 8px", fontSize: 20 }}>Unable to load note</h1>
           <p style={{ margin: "0 0 16px", color: "var(--muted-foreground)" }}>
             This note could not be loaded right now.

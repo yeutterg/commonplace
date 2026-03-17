@@ -716,47 +716,53 @@ export default function NoteViewer({
           <div
             className="selection-toolbar"
             style={{
-              top: selection.rect.bottom + 10,
-              left: selection.rect.left + Math.max(selection.rect.width / 2 - (adminMode && onEditSelection ? 78 : 56), 0),
+              top: selection.rect.top - 6,
+              left: selection.rect.right + 8,
             }}
           >
             {adminMode && onEditSelection ? (
-              <button
-                type="button"
-                className="selection-action ghost-button icon-only"
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  setShowEditForm(true);
-                  setEditValue(selection.text);
-                }}
-                aria-label="Edit selection"
-              >
-                <PencilIcon width={14} height={14} />
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="selection-action-icon"
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    setShowEditForm(true);
+                    setEditValue(selection.text);
+                  }}
+                  aria-label="Edit selection"
+                >
+                  <PencilIcon width={15} height={15} />
+                </button>
+                <div className="selection-toolbar-divider" />
+              </>
             ) : null}
             {detail.note.commentsEnabled ? (
-              <button
-                type="button"
-                className="selection-action primary-button icon-only"
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  setShowCommentForm(true);
-                }}
-                aria-label="Comment on selection"
-              >
-                <MessageSquareIcon width={14} height={14} />
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="selection-action-icon"
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    setShowCommentForm(true);
+                  }}
+                  aria-label="Comment on selection"
+                >
+                  <MessageSquareIcon width={15} height={15} />
+                </button>
+                <div className="selection-toolbar-divider" />
+              </>
             ) : null}
             <button
               type="button"
-              className="selection-action ghost-button icon-only"
+              className="selection-action-icon"
               onMouseDown={(event) => {
                 event.preventDefault();
                 void handleCopySelection();
               }}
               aria-label="Copy selection"
             >
-              <CopyIcon width={14} height={14} />
+              <CopyIcon width={15} height={15} />
             </button>
           </div>
         ) : null}

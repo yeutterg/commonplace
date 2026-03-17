@@ -31,16 +31,21 @@ interface Props {
 
 function ToggleRow({
   label,
+  description,
   checked,
   onChange,
 }: {
   label: string;
+  description?: string;
   checked: boolean;
   onChange: (next: boolean) => void;
 }) {
   return (
     <label className="settings-row">
-      <span>{label}</span>
+      <span className="settings-row-label">
+        <span>{label}</span>
+        {description ? <span className="settings-row-desc">{description}</span> : null}
+      </span>
       <button
         type="button"
         className={`toggle-switch ${checked ? "on" : ""}`}
@@ -150,7 +155,7 @@ export default function AdminSettingsPanel({
       </div>
 
       <div className="admin-panel-body">
-        <ToggleRow label="Publish" checked={publish} onChange={setPublish} />
+        <ToggleRow label="Publish" description="Make this note accessible" checked={publish} onChange={setPublish} />
 
         <div className="settings-row settings-row-stack">
           <span>Visibility</span>
@@ -266,8 +271,8 @@ export default function AdminSettingsPanel({
           ) : null}
         </div>
 
-        <ToggleRow label="Allow Comments" checked={comments} onChange={setComments} />
-        <ToggleRow label="Allow Editing" checked={editing} onChange={setEditing} />
+        <ToggleRow label="Allow Comments" description="Readers can leave comments" checked={comments} onChange={setComments} />
+        <ToggleRow label="Allow Editing" description="Readers can suggest edits" checked={editing} onChange={setEditing} />
       </div>
 
       <div className="admin-panel-footer">

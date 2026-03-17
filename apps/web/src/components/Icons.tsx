@@ -110,3 +110,7 @@ export function GlobeIcon(props: IconProps) {
 export function CheckIcon(props: IconProps) {
   return <BaseIcon {...props}><path d="m5 12 4 4L19 6" /></BaseIcon>;
 }
+
+export function SortIcon(props: IconProps) {
+  return <BaseIcon {...props}><path d="M3 6h18" /><path d="M7 12h10" /><path d="M10 18h4" /></BaseIcon>;
+}

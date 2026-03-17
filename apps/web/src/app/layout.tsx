@@ -1,14 +1,8 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Inter, Newsreader } from "next/font/google";
+import { Inter, Newsreader } from "next/font/google";
 import "./globals.css";
 
-const displayFont = Cormorant_Garamond({
-  subsets: ["latin"],
-  variable: "--font-display",
-  weight: ["400", "500", "600"],
-});
-
-const bodyFont = Newsreader({
+const serifFont = Newsreader({
   subsets: ["latin"],
   variable: "--font-serif",
   weight: ["400", "500", "600"],
@@ -35,7 +29,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${displayFont.variable} ${bodyFont.variable} ${uiFont.variable}`}
+      className={`${serifFont.variable} ${uiFont.variable}`}
     >
       <head>
         <script

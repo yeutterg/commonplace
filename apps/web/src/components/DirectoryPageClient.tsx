@@ -53,9 +53,11 @@ function TreeRow({
         {admin ? (
           <span className="vault-row-meta">
             <span className={status.className}>{status.label}</span>
-            <span className="vault-row-comments">
-              {node.note.commentCount} {node.note.commentCount === 1 ? "comment" : "comments"}
-            </span>
+            {node.note.commentCount > 0 ? (
+              <span className="vault-row-comments">
+                {node.note.commentCount} {node.note.commentCount === 1 ? "comment" : "comments"}
+              </span>
+            ) : null}
           </span>
         ) : (
           <span className="vault-row-open">Open</span>

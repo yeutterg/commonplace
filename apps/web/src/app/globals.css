@@ -220,7 +220,7 @@ textarea {
 
 .vault-selector-title {
   margin: 0;
-  font-family: var(--font-display), var(--font-serif), serif;
+  font-family: var(--font-serif), "Newsreader", serif;
   font-size: 36px;
   font-weight: 500;
   letter-spacing: -0.03em;
@@ -334,7 +334,7 @@ textarea {
 
 .vault-directory-title {
   margin: 0;
-  font-family: var(--font-display), var(--font-serif), serif;
+  font-family: var(--font-serif), "Newsreader", serif;
   font-size: 36px;
   font-weight: 500;
   letter-spacing: -0.03em;
@@ -365,7 +365,7 @@ textarea {
 
 .vault-header h1 {
   margin: 0;
-  font-family: var(--font-display), var(--font-serif), serif;
+  font-family: var(--font-serif), "Newsreader", serif;
   font-size: 42px;
   line-height: 1;
   font-weight: 500;
@@ -374,7 +374,7 @@ textarea {
 
 .connect-card h1 {
   margin: 0;
-  font-family: var(--font-display), var(--font-serif), serif;
+  font-family: var(--font-serif), "Newsreader", serif;
   font-size: 42px;
   line-height: 1;
   font-weight: 500;
@@ -813,7 +813,7 @@ textarea {
 
 .protected-note-card h1 {
   margin: 0;
-  font-family: var(--font-display), var(--font-serif), serif;
+  font-family: var(--font-serif), "Newsreader", serif;
   font-size: 42px;
   line-height: 1;
   font-weight: 500;
@@ -1005,7 +1005,7 @@ textarea {
 .note-prose h2,
 .note-prose h3 {
   color: var(--text-primary);
-  font-family: var(--font-display), serif;
+  font-family: var(--font-serif), "Newsreader", serif;
   font-weight: 500;
   letter-spacing: -1px;
 }

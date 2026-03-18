@@ -418,7 +418,7 @@ export default function NoteViewerWrapper({
                   </button>
                 </>
               ) : null}
-              {!adminMode ? <ThemeToggle /> : null}
+              <ThemeToggle />
             </>
           )}
         </div>

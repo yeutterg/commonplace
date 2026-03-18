@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CommentRecord } from "@commonplace/shared";
 import { MailIcon, MessageSquareIcon, SortIcon, XIcon } from "./Icons";
 
@@ -52,8 +52,10 @@ export default function CommentSidebar({
   replyTargetId,
   onReplyTargetChange,
 }: Props) {
-  const [sortMode, setSortMode] = useState<"doc" | "time">("doc");
+  const [sortMode, setSortMode] = useState<"doc" | "newest" | "oldest">("doc");
   const [showResolved, setShowResolved] = useState(false);
+  const [sortMenuOpen, setSortMenuOpen] = useState(false);
+  const sortRef = useRef<HTMLDivElement>(null);
   const [replyEmail, setReplyEmail] = useState("");
   const [replyBody, setReplyBody] = useState("");
   const [replyError, setReplyError] = useState("");
@@ -63,6 +65,17 @@ export default function CommentSidebar({
   useEffect(() => {
     setReplyEmail(localStorage.getItem("commenter-email") || "");
   }, []);
+
+  useEffect(() => {
+    if (!sortMenuOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (sortRef.current && !sortRef.current.contains(e.target as Node)) {
+        setSortMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [sortMenuOpen]);
 
   useEffect(() => {
     setReplyBody("");
@@ -85,8 +98,11 @@ export default function CommentSidebar({
   const sorted = useMemo(() => {
     const next = [...visibleComments];
     next.sort((a, b) => {
-      if (sortMode === "time") {
+      if (sortMode === "newest") {
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      if (sortMode === "oldest") {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       }
       return a.anchorStart - b.anchorStart;
     });
@@ -99,30 +115,47 @@ export default function CommentSidebar({
         <div className="comments-header-left">
           <p className="comments-title">Comments</p>
           <p className="comments-meta">
-            {openCount} open
+            {openCount} open{resolvedCount > 0 ? ` · ${resolvedCount} resolved` : ""}
             {adminMode && pendingCount > 0 ? ` · ${pendingCount} pending` : ""}
           </p>
         </div>
         <div className="comments-header-right">
-          <button
-            type="button"
-            className={`icon-button comments-filter-toggle ${showResolved ? "active" : ""}`}
-            onClick={() => setShowResolved((value) => !value)}
-            aria-pressed={showResolved}
-            aria-label={showResolved ? "Hide resolved" : "Show resolved"}
-            title={showResolved ? "Hide resolved" : "Show resolved"}
-          >
-            <span className="comments-filter-count">{resolvedCount}</span>
-          </button>
-          <button
-            type="button"
-            className="icon-button"
-            onClick={() => setSortMode(sortMode === "doc" ? "time" : "doc")}
-            aria-label={sortMode === "doc" ? "Sort by time" : "Sort by document order"}
-            title={sortMode === "doc" ? "Sort by time" : "Sort by doc order"}
-          >
-            <SortIcon width={15} height={15} />
-          </button>
+          <div className="comments-sort-wrapper" ref={sortRef}>
+            <button
+              type="button"
+              className="icon-button"
+              onClick={() => setSortMenuOpen((v) => !v)}
+              aria-label="Sort comments"
+              title="Sort comments"
+            >
+              <SortIcon width={15} height={15} />
+            </button>
+            {sortMenuOpen ? (
+              <div className="comments-sort-menu">
+                <button
+                  type="button"
+                  className={`comments-sort-option ${sortMode === "doc" ? "active" : ""}`}
+                  onClick={() => { setSortMode("doc"); setSortMenuOpen(false); }}
+                >
+                  Document Order
+                </button>
+                <button
+                  type="button"
+                  className={`comments-sort-option ${sortMode === "newest" ? "active" : ""}`}
+                  onClick={() => { setSortMode("newest"); setSortMenuOpen(false); }}
+                >
+                  Newest
+                </button>
+                <button
+                  type="button"
+                  className={`comments-sort-option ${sortMode === "oldest" ? "active" : ""}`}
+                  onClick={() => { setSortMode("oldest"); setSortMenuOpen(false); }}
+                >
+                  Oldest
+                </button>
+              </div>
+            ) : null}
+          </div>
           {mobile ? (
             <button type="button" className="icon-button" onClick={onClose} aria-label="Close comments">
               <XIcon width={16} height={16} />

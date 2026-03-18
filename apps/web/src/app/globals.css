@@ -1578,14 +1578,50 @@ mark[data-comment-id].active {
   gap: 2px;
 }
 
-.comments-filter-toggle.active {
-  background: var(--accent-subtle);
-  color: var(--accent);
+.comments-sort-wrapper {
+  position: relative;
 }
 
-.comments-filter-count {
+.comments-sort-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  padding: 4px;
+  min-width: 160px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-primary);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+}
+
+.dark .comments-sort-menu {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.comments-sort-option {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
   font-family: var(--font-sans), sans-serif;
-  font-size: 11px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.comments-sort-option:hover {
+  background: var(--bg-tertiary);
+}
+
+.comments-sort-option.active {
+  color: var(--text-primary);
   font-weight: 500;
 }
 

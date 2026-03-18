@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { VaultInfo } from "@/lib/api";
 import { FolderIcon } from "./Icons";
 import ThemeToggle from "./ThemeToggle";
+import UserMenu from "./UserMenu";
 
 const VAULT_COLORS = [
   "linear-gradient(135deg, #7f6df2, #6c5ce7)",
@@ -29,6 +30,7 @@ export default function VaultSelector({ vaults, noteCounts, admin }: Props) {
         </div>
         <div className="note-topbar-actions">
           <ThemeToggle variant="icon" />
+          <UserMenu />
         </div>
       </div>
       <div className="vault-selector-content">

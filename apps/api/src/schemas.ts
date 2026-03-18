@@ -9,10 +9,11 @@ export const authRequestSchema = z.object({
 export const adminNoteSettingsSchema = z.object({
   slug: z.string().min(1),
   publish: z.boolean(),
-  visibility: z.enum(["public", "password"]),
+  visibility: z.enum(["public", "password", "users"]),
   comments: z.boolean(),
   editing: z.boolean(),
   password: z.string().optional(),
+  allowedEmails: z.array(z.string().email()).optional(),
 });
 
 const adminNoteSelectionContentSchema = z.object({

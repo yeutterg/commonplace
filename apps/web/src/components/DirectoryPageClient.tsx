@@ -14,6 +14,7 @@ import {
 } from "@/lib/directory-tree";
 import { CheckIcon, ChevronDownIcon, ChevronRightIcon, FileIcon, FolderIcon, LockIcon, SearchIcon, ShareIcon, XIcon } from "./Icons";
 import ThemeToggle from "@/components/ThemeToggle";
+import UserMenu from "@/components/UserMenu";
 import { getClientApiBaseUrl } from "@/lib/api-base";
 
 function statusForNote(note: NoteSummary) {
@@ -409,6 +410,7 @@ export default function DirectoryPageClient({
             </button>
           ) : null}
           <ThemeToggle variant="icon" />
+          <UserMenu />
         </div>
       </div>
 

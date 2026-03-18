@@ -1051,7 +1051,7 @@ export class FilesystemNotesIndex implements NotesRepository {
   async updateNoteSettings(input: {
     slug: string;
     publish: boolean;
-    visibility: "public" | "password";
+    visibility: "public" | "password" | "users";
     comments: boolean;
     editing: boolean;
     passwordHash?: string;
@@ -2627,7 +2627,7 @@ export class MultiVaultNotesIndex implements NotesRepository {
   async updateNoteSettings(input: {
     slug: string;
     publish: boolean;
-    visibility: "public" | "password";
+    visibility: "public" | "password" | "users";
     comments: boolean;
     editing: boolean;
     passwordHash?: string;

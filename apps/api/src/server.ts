@@ -19,6 +19,7 @@ import {
   vaultConnectionSchema,
 } from "./schemas.js";
 import { VaultConnectionStore } from "./vault-connection-store.js";
+import { NoteAccessStore } from "./note-access-store.js";
 
 const app = express();
 const noteRegistry = new NoteRegistry(apiConfig.sqlitePath);
@@ -27,6 +28,7 @@ const notesRepository = apiConfig.vaults.length > 1
   : new FilesystemNotesIndex(apiConfig.vaultDir, noteRegistry, apiConfig.publicApiBaseUrl);
 const commentsStore = new CommentsStore(apiConfig.sqlitePath);
 const vaultConnectionStore = new VaultConnectionStore(apiConfig.sqlitePath);
+const noteAccessStore = new NoteAccessStore(apiConfig.sqlitePath);
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
 function notesStatus() {
@@ -255,7 +257,17 @@ app.patch("/api/admin/note/settings", async (req, res) => {
       return;
     }
 
+    if (parsed.data.visibility === "users" && parsed.data.allowedEmails) {
+      noteAccessStore.setAllowedEmails(parsed.data.slug, parsed.data.allowedEmails);
+    }
+
     const detail = await notesRepository.getNoteDetail(parsed.data.slug, true, true);
+    if (detail) {
+      detail.accessControl = {
+        internalUsers: [],
+        externalEmails: noteAccessStore.getAllowedEmails(parsed.data.slug),
+      };
+    }
     res.json(detail ? withDetailCommentCounts(detail, true) : null);
   } catch (error) {
     res.status(400).json({ error: error instanceof Error ? error.message : "Unable to update note settings" });
@@ -285,6 +297,37 @@ app.patch("/api/admin/note/content", async (req, res) => {
       error: error instanceof Error ? error.message : "Unable to update note content",
     });
   }
+});
+
+app.get("/api/admin/note/access", (req, res) => {
+  const slug = typeof req.query.slug === "string" ? req.query.slug : "";
+  if (!slug) {
+    res.status(400).json({ error: "Missing slug" });
+    return;
+  }
+  const emails = noteAccessStore.getAllowedEmails(slug);
+  res.json({ slug, allowedEmails: emails });
+});
+
+app.put("/api/admin/note/access", (req, res) => {
+  const { slug, allowedEmails } = req.body as { slug?: string; allowedEmails?: string[] };
+  if (!slug || !Array.isArray(allowedEmails)) {
+    res.status(400).json({ error: "Invalid payload" });
+    return;
+  }
+  noteAccessStore.setAllowedEmails(slug, allowedEmails);
+  res.json({ slug, allowedEmails: noteAccessStore.getAllowedEmails(slug) });
+});
+
+app.get("/api/note/check-access", (req, res) => {
+  const slug = typeof req.query.slug === "string" ? req.query.slug : "";
+  const email = typeof req.query.email === "string" ? req.query.email : "";
+  if (!slug || !email) {
+    res.status(400).json({ error: "Missing slug or email" });
+    return;
+  }
+  const hasAccess = noteAccessStore.hasAccess(slug, email);
+  res.json({ slug, email, hasAccess });
 });
 
 app.get("/api/auth", (req, res) => {

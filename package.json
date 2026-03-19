@@ -14,9 +14,14 @@
     "test": "npm run test --workspaces --if-present",
     "e2e:shots": "playwright test --config=playwright.config.ts --project=chromium",
     "e2e:shots:update": "playwright test --config=playwright.config.ts --project=chromium --update-snapshots"
-  }
-  ,
+  },
   "devDependencies": {
-    "@playwright/test": "^1.56.1"
+    "@playwright/test": "^1.56.1",
+    "@types/bcryptjs": "^2.4.6"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "helmet": "^8.1.0",
+    "next-auth": "^5.0.0-beta.30"
   }
 }

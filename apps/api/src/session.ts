@@ -35,7 +35,13 @@ function decodeSession(raw: string | undefined): SessionPayload {
   }
 
   const [value, signature] = raw.split(".");
-  if (!value || !signature || sign(value) !== signature) {
+  if (!value || !signature) {
+    return emptySession;
+  }
+  const expected = sign(value);
+  const sigBuf = Buffer.from(signature);
+  const expBuf = Buffer.from(expected);
+  if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
     return emptySession;
   }
 

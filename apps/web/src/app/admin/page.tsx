@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import DirectoryPageClient from "@/components/DirectoryPageClient";
 import VaultSelector from "@/components/VaultSelector";
 import { fetchAdminNotes, fetchVaults } from "@/lib/api";
@@ -14,6 +16,15 @@ export default async function AdminHome({
 }: {
   searchParams: Promise<{ q?: string; vault?: string }>;
 }) {
+  const session = await auth();
+  const isAdmin = !!(session?.user?.email && session.user.email.toLowerCase() === process.env.ADMIN_EMAIL?.toLowerCase());
+  if (!session?.user) {
+    redirect("/login?callbackUrl=/admin");
+  }
+  if (!isAdmin) {
+    redirect("/");
+  }
+
   const { q, vault } = await searchParams;
   const vaults = await fetchVaults();
 

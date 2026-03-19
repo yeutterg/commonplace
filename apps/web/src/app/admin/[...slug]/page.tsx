@@ -1,6 +1,7 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import type { NoteDetailResponse } from "@commonplace/shared";
+import { auth } from "@/auth";
 import { fetchAdminNoteDetail, fetchAdminNotes } from "@/lib/api";
 import NoteViewerWrapper from "../../[...slug]/NoteViewerWrapper";
 
@@ -32,6 +33,15 @@ export default async function AdminNotePage({
 }: {
   params: Promise<{ slug: string[] }>;
 }) {
+  const session = await auth();
+  const isAdmin = !!(session?.user?.email && session.user.email.toLowerCase() === process.env.ADMIN_EMAIL?.toLowerCase());
+  if (!session?.user) {
+    redirect("/login?callbackUrl=/admin");
+  }
+  if (!isAdmin) {
+    redirect("/");
+  }
+
   const { slug } = await params;
   const requestedSlug = joinSlug(slug);
   let detail: NoteDetailResponse | null = null;

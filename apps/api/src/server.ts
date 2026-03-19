@@ -1,6 +1,8 @@
 import crypto from "node:crypto";
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
+import bcrypt from "bcryptjs";
 import { WebSocketServer } from "ws";
 import type { Server } from "node:http";
 import { apiConfig } from "./config.js";
@@ -8,6 +10,7 @@ import { CommentsStore } from "./comments-store.js";
 import { NoteRegistry } from "./note-registry.js";
 import { FilesystemNotesIndex, MultiVaultNotesIndex } from "./notes-index.js";
 import { readSession, writeSession } from "./session.js";
+import { z } from "zod";
 import type { NoteDetailResponse, NotesListResponse, NoteSummary, SystemCapabilities } from "@commonplace/shared";
 import {
   adminNoteContentSchema,
@@ -44,7 +47,15 @@ function sendNotesRepositoryError(res: express.Response, fallbackMessage: string
 }
 
 function hashPassword(password: string): string {
-  return crypto.createHash("sha256").update(password).digest("hex");
+  return bcrypt.hashSync(password, 10);
+}
+
+function verifyPassword(password: string, hash: string): boolean {
+  // Support legacy SHA-256 hashes (64 hex chars) and bcrypt hashes
+  if (hash.length === 64 && /^[0-9a-f]+$/.test(hash)) {
+    return crypto.createHash("sha256").update(password).digest("hex") === hash;
+  }
+  return bcrypt.compareSync(password, hash);
 }
 
 function checkRateLimit(ip: string): boolean {
@@ -96,11 +107,39 @@ async function loadNoteForComments(slug: string, req: express.Request, adminMode
   return notesRepository.getNoteDetail(slug, adminMode ? true : noteAccess(slug, req), adminMode);
 }
 
+app.set("trust proxy", 1);
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({
   origin: apiConfig.corsOrigin,
   credentials: true
 }));
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
+
+// Admin API key middleware — protects all /api/admin/* routes
+function requireAdminAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const apiKey = req.headers["x-admin-key"];
+  if (apiKey && apiKey === apiConfig.adminApiKey) {
+    return next();
+  }
+  // Also accept the session cookie if the admin email matches
+  const session = readSession(req);
+  if (session.email && session.email.toLowerCase() === apiConfig.adminEmail?.toLowerCase()) {
+    return next();
+  }
+  res.status(401).json({ error: "Admin authentication required" });
+}
+
+app.use("/api/admin", requireAdminAuth);
+
+// Periodic rate limit cleanup (every 5 minutes)
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of rateLimitMap) {
+    if (now > entry.resetAt) {
+      rateLimitMap.delete(ip);
+    }
+  }
+}, 5 * 60_000);
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true });
@@ -205,14 +244,13 @@ app.get("/api/admin/note", async (req, res) => {
 app.get("/api/asset", async (req, res) => {
   const slug = getSlugFromQuery(req);
   const reference = getAssetReferenceFromQuery(req);
-  const adminMode = req.query.admin === "1";
   if (!slug || !reference) {
     res.status(400).json({ error: "Missing asset reference" });
     return;
   }
 
   try {
-    const detail = await notesRepository.getNoteDetail(slug, adminMode ? true : noteAccess(slug, req), adminMode);
+    const detail = await notesRepository.getNoteDetail(slug, noteAccess(slug, req), false);
     if (!detail) {
       res.status(404).json({ error: "Note not found" });
       return;
@@ -222,7 +260,7 @@ app.get("/api/asset", async (req, res) => {
       return;
     }
 
-    const asset = notesRepository.resolveAssetReference(slug, reference, adminMode);
+    const asset = notesRepository.resolveAssetReference(slug, reference, false);
     if (!asset) {
       res.status(404).json({ error: "Asset not found" });
       return;
@@ -310,24 +348,17 @@ app.get("/api/admin/note/access", (req, res) => {
 });
 
 app.put("/api/admin/note/access", (req, res) => {
-  const { slug, allowedEmails } = req.body as { slug?: string; allowedEmails?: string[] };
-  if (!slug || !Array.isArray(allowedEmails)) {
+  const schema = z.object({
+    slug: z.string().min(1),
+    allowedEmails: z.array(z.string().email()).max(100),
+  });
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
     res.status(400).json({ error: "Invalid payload" });
     return;
   }
-  noteAccessStore.setAllowedEmails(slug, allowedEmails);
-  res.json({ slug, allowedEmails: noteAccessStore.getAllowedEmails(slug) });
-});
-
-app.get("/api/note/check-access", (req, res) => {
-  const slug = typeof req.query.slug === "string" ? req.query.slug : "";
-  const email = typeof req.query.email === "string" ? req.query.email : "";
-  if (!slug || !email) {
-    res.status(400).json({ error: "Missing slug or email" });
-    return;
-  }
-  const hasAccess = noteAccessStore.hasAccess(slug, email);
-  res.json({ slug, email, hasAccess });
+  noteAccessStore.setAllowedEmails(parsed.data.slug, parsed.data.allowedEmails);
+  res.json({ slug: parsed.data.slug, allowedEmails: noteAccessStore.getAllowedEmails(parsed.data.slug) });
 });
 
 app.get("/api/auth", (req, res) => {
@@ -336,6 +367,12 @@ app.get("/api/auth", (req, res) => {
 });
 
 app.post("/api/auth", async (req, res) => {
+  const clientIp = req.ip || "unknown";
+  if (!checkRateLimit(`auth:${clientIp}`)) {
+    res.status(429).json({ error: "Too many authentication attempts. Try again later." });
+    return;
+  }
+
   const parsed = authRequestSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid authentication request" });
@@ -347,7 +384,7 @@ app.post("/api/auth", async (req, res) => {
   try {
     note = await notesRepository.getPublishedNoteBySlug(slug);
   } catch {
-    sendNotesRepositoryError(res, "Unable to load note");
+    res.status(503).json({ error: "Unable to load note" });
     return;
   }
   if (!note) {
@@ -360,7 +397,7 @@ app.post("/api/auth", async (req, res) => {
     return;
   }
 
-  if (!note.passwordHash || hashPassword(password) !== note.passwordHash) {
+  if (!note.passwordHash || !verifyPassword(password, note.passwordHash)) {
     res.status(401).json({ error: "Invalid password" });
     return;
   }

@@ -3,16 +3,24 @@ import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
+function sanitizeCallbackUrl(url: string | undefined): string {
+  if (!url) return "/";
+  // Only allow relative paths — prevent open redirect
+  if (!url.startsWith("/") || url.startsWith("//")) return "/";
+  return url;
+}
+
 export default async function LoginPage({
   searchParams,
 }: {
   searchParams: Promise<{ callbackUrl?: string }>;
 }) {
   const session = await auth();
-  const { callbackUrl } = await searchParams;
+  const { callbackUrl: rawCallbackUrl } = await searchParams;
+  const callbackUrl = sanitizeCallbackUrl(rawCallbackUrl);
 
   if (session?.user) {
-    redirect(callbackUrl || "/");
+    redirect(callbackUrl);
   }
 
   return (
@@ -29,7 +37,7 @@ export default async function LoginPage({
         <form
           action={async () => {
             "use server";
-            await signIn("google", { redirectTo: callbackUrl || "/" });
+            await signIn("google", { redirectTo: callbackUrl });
           }}
         >
           <button type="submit" className="primary-button" style={{ width: "100%", justifyContent: "center", gap: 8 }}>

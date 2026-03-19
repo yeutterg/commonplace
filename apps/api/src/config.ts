@@ -51,11 +51,13 @@ const envSchema = z.object({
   VAULT_DIRS: z.string().optional(),
   STATE_DIR: z.string().default(path.resolve(packageDir, "../../data")),
   PUBLIC_API_BASE_URL: z.string().optional(),
-  SESSION_SECRET: z.string().min(32).default("change-me-in-production-session-secret"),
+  SESSION_SECRET: z.string().min(32),
   SESSION_MAX_AGE_DAYS: z.coerce.number().int().positive().default(30),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
   COOKIE_DOMAIN: z.string().optional(),
-  COOKIE_SAME_SITE: z.enum(["lax", "strict", "none"]).default("lax")
+  COOKIE_SAME_SITE: z.enum(["lax", "strict", "none"]).default("lax"),
+  ADMIN_API_KEY: z.string().min(32).optional(),
+  ADMIN_EMAIL: z.string().email().optional()
 });
 
 export const env = envSchema.parse(process.env);
@@ -75,5 +77,7 @@ export const apiConfig = {
   sessionMaxAgeDays: env.SESSION_MAX_AGE_DAYS,
   cookieDomain: env.COOKIE_DOMAIN,
   cookieSameSite: env.COOKIE_SAME_SITE,
+  adminApiKey: env.ADMIN_API_KEY,
+  adminEmail: env.ADMIN_EMAIL,
   sqlitePath: path.join(env.STATE_DIR, "commonplace.sqlite")
 };

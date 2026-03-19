@@ -115,12 +115,15 @@ Only a few frontmatter keys control application behavior:
 
 | Key | Default | Behavior |
 |---|---|---|
-| `publish` | `false` | `true` makes the note visible in the public directory |
-| `visibility` | `public` | `password` requires auth; `users` restricts to an allowlist |
+| `visibility` | `private` | `public` = anyone, `password` = requires auth, `users` = email allowlist, `private` = admin only |
 | `comments` | `true` | `false` disables comments |
 | `editing` | `false` | `true` enables inline edit suggestions |
-| `password` | unset | bcrypt hash (set automatically via admin UI) |
+| `password` | unset | bcrypt hash (set automatically via admin UI, only used when `visibility: password`) |
 | `subtitle` | unset | Shown below the note title |
+
+Notes default to `private` (only visible to admin). Change `visibility` to `public` to make a note accessible to everyone.
+
+Legacy support: notes with `publish: true` in frontmatter are automatically treated as `visibility: public`.
 
 All other frontmatter keys are rendered as metadata (tags as pills, dates formatted, URLs as links).
 

@@ -4,6 +4,10 @@ Publish Obsidian Markdown vaults as browsable, commentable websites with access 
 
 Commonplace reads one or more local Markdown vaults from disk, renders notes on the web, and provides a collaboration layer: inline commenting, text selection toolbars, bulk sharing controls, and per-note access management. The source of truth stays in plain `.md` files.
 
+![Directory view](docs/screenshot-directory.png)
+
+![Note view with comments](docs/screenshot-note.png)
+
 ## Features
 
 ### Vault Management
